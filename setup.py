@@ -1,0 +1,30 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='magic-bi',
+    version='0.1.1',
+    packages=find_packages(include=['magic_bi', 'magic_bi.*']),
+    install_requires=[
+        'uvicorn>=0.31.0',
+        'loguru>=0.7.2',
+        'fastapi>=0.115.0',
+        'pillow>=10.4.0',
+        'numpy>=2.1.1',
+        'openai>=1.51.0',
+        'sqlalchemy>=2.0.35',
+        'SQLAlchemy-Utils>=0.41.2',
+        'minio>=7.2.9',
+        'sentence-transformers>=3.1.1',
+        'qdrant-client>=1.11.3',
+        'flagembedding>=1.2.11',
+        'peft>=0.13.0',
+        'elasticsearch>=8.15.1',
+        'pika>=1.3.2',
+        'python-docx>=1.1.2',
+        'fitz>=0.0.1.dev',
+        'pymupdf>=1.24.10',
+        'pytesseract>=0.3.13',
+        'psycopg2>=2.9.9',
+        'python-multipart>=0.0.12',
+    ],
+)

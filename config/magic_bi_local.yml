@@ -1,0 +1,66 @@
+model:
+    general_llm:
+        vendor: openai
+        api_key: ollama
+        model: qwen2.5:72b
+        base_url: http://127.0.0.1:11434/v1/
+        system_prompt: You are a helpful assistant.
+
+    mllm:
+        vendor: openai
+        api_key: ollama
+        model: Qwen2-VL-72B-Instruct-AWQ
+        base_url: http://127.0.0.1:11435/v1/
+        system_prompt: You are a helpful assistant.
+
+    text2sql_llm:
+        vendor: openai
+        api_key: ollama
+        model: guangkuan_091301
+        base_url: http://127.0.0.1:11436/v1/
+        system_prompt: You are a helpful assistant.
+
+    text_embedding:
+        model: models/paraphrase-multilingual-mpnet-base-v2
+
+    text_rerank:
+        model: models/bge-reranker-v2-m3
+web:
+    port: 50000
+    url_prefix: /magic_bi
+
+agent:
+    memmory_enabled: False
+    try_decompose_user_question: True
+
+misc:
+    language_code: en
+
+db:
+    sql_orm:
+        url: postgresql://writer:Abc123567.@127.0.0.1:5432/magic_bi
+
+    timescale_orm:
+        url: postgresql://writer:Abc123567.@127.0.0.1:5433/magic_bi
+
+oss:
+    access_key: minio_writer
+    secret_key: minio_writer.098765
+    endpoint: 127.0.0.1:9000
+    type: minio
+
+qdrant:
+    host: 127.0.0.1
+    port: 6333
+    text_vector_size: 768
+
+elasticsearch:
+    url: http://127.0.0.1:9200
+    user: elastic
+    password: Abc123567.
+
+#rabbitmq:
+#    host: 192.168.68.96
+#    user: writer
+#    password: Abc123567.
+#    expiration: 6000

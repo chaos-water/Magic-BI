@@ -1,0 +1,13 @@
+dist
+.DS_Store
+build
+models
+*.log
+*.docx
+*.pdf
+*.txt
+*.jpg
+*.png
+log
+poetry.lock
+**__pycache__

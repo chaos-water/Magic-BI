@@ -1,0 +1,63 @@
+services:
+  postgre:
+    container_name: postgre
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-writer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Abc123567.}
+      PGDATA: /data/postgres
+    volumes:
+      - ${ROOT_DATA_DIR_PATH}/postgres/data:/data/postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: ${RESTART_POLICY}
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    command: server --console-address ":9001" /data}
+    restart: ${RESTART_POLICY}
+    volumes:
+      - ${ROOT_DATA_DIR_PATH}/minio/data:/data
+      - ./minio/config_files:/root/.minio
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    command: postgres -c shared_preload_libraries=timescaledb
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-writer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Abc123567.}
+      PGDATA: /data/postgres
+    volumes:
+      - ${ROOT_DATA_DIR_PATH}/timescaledb/data:/data/postgres
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: always
+    container_name: qdrant
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - ./qdrant_data:/qdrant_data
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_SEARCH_VERSION}
+#    image: docker.elastic.co/elasticsearch/elasticsearch:latest
+    environment:
+      discovery.type: single-node
+      xpack.security.http.ssl.enabled: false
+      xpack.license.self_generated.type: trial
+      xpack.security.enabled: true
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    ports:
+      - "127.0.0.1:9200:9200"

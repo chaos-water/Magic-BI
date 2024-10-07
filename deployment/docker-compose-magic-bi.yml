@@ -1,0 +1,13 @@
+services:
+  magic-bi:
+    container_name: magic-bi
+    image: magic-bi:${MAGIC_BI_VERSION}
+    build:
+      context: ../
+      dockerfile: deployment/Dockerfile
+    network_mode: host
+    volumes:
+      - ../config/magic_bi_local.yml:/config/magic_bi.yml
+      - ../models:/models
+    restart: ${RESTART_POLICY}
+    command: [ "python3", "-m", "magic_bi.main", "--config", "config/magic_bi.yml" ]
