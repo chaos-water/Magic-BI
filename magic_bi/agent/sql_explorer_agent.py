@@ -9,7 +9,7 @@ from magic_bi.agent.base_agent import BaseAgent
 from magic_bi.message.message import Message
 from magic_bi.utils.globals import Globals
 from magic_bi.io.base_io import BaseIo
-from magic_bi.data.data_connector import DataConnector, DataConnectorOrm
+from magic_bi.data.data_source import DataSource, DataSourceOrm
 from magic_bi.agent.agent_meta import AgentMeta
 from magic_bi.agent.utils import get_env_info
 from magic_bi.plugin.sql_plugin import SqlPlugin
@@ -169,7 +169,7 @@ Output in the following format {"is_answered": "$is_answered", "reason": "$reaso
 
 
 def test_v2():
-    from magic_bi.data.data_connector import DataConnectorOrm, DataConnector
+    from magic_bi.data.data_source import DataSourceOrm, DataSource
     from magic_bi.model.openai_adapter import OpenaiAdapter
     from magic_bi.config.model_config import ModelConfig
 
@@ -190,12 +190,12 @@ def test_v2():
 
     openai_adapter = OpenaiAdapter()
     openai_adapter.init(model_config=model_config)
-    data_connector_orm = DataConnectorOrm()
-    data_connector_orm.url = "mysql+pymysql://root:Dmaidaas@10.12.51.162:3306/guangkuan_init"
-    data_connector = DataConnector()
-    data_connector.init(data_connector_orm)
-    full_table_list = data_connector.get_table_list()
-    db_table_description = data_connector.get_table_column_batch(table_list=full_table_list, is_mini=True)
+    data_source_orm = DataSourceOrm()
+    data_source_orm.url = "mysql+pymysql://root:Dmaidaas@10.12.51.162:3306/guangkuan_init"
+    data_source = DataSource()
+    data_source.init(data_source_orm)
+    full_table_list = data_source.get_table_list()
+    db_table_description = data_source.get_table_column_batch(table_list=full_table_list, is_mini=True)
     relevant_business = "工单、巡检任务、设备资金、设备、桌面办公、市政数据服务台、设备入库、忙碌&空闲、设备类型、设备数量、运维部门、资产、故障"
     generate_qa_prompt = generate_qa_prompt_template_v2_zh.replace("{table_descriptions}", db_table_description).replace("{relevant_business}", relevant_business)
 
@@ -227,7 +227,7 @@ def test_v2():
                     continue
 
 
-                table_descriptions = data_connector.get_table_column_batch(relevant_tables)
+                table_descriptions = data_source.get_table_column_batch(relevant_tables)
 
                 generate_sql_prompt = generate_sql_prompt_template.replace("{table_descriptions}", table_descriptions).replace("{user_question}", translated_question)
 
@@ -238,7 +238,7 @@ def test_v2():
                 from magic_bi.plugin.sql_plugin import SqlPlugin
 
                 sql_plugin = SqlPlugin()
-                (ret, sql_output) = sql_plugin.run(sql_statement, data_connector.orm.url)
+                (ret, sql_output) = sql_plugin.run(sql_statement, data_source.orm.url)
                 if ret != 0:
                     print("execute the sql %s failed, the relevant_question is:%s" % (sql_statement, translated_question))
                     continue
@@ -262,7 +262,7 @@ def test_v2():
         index += 1
 
 def test_v3():
-    from magic_bi.data.data_connector import DataConnectorOrm, DataConnector
+    from magic_bi.data.data_source import DataSourceOrm, DataSource
     from magic_bi.model.openai_adapter import OpenaiAdapter
     from magic_bi.config.model_config import ModelConfig
 
@@ -279,12 +279,12 @@ def test_v3():
 
     openai_adapter = OpenaiAdapter()
     openai_adapter.init(model_config=model_config)
-    data_connector_orm = DataConnectorOrm()
-    data_connector_orm.url = "mysql+pymysql://root:Dmaidaas@10.12.51.162:3306/guangkuan_init"
-    data_connector = DataConnector()
-    data_connector.init(data_connector_orm)
-    full_table_list = data_connector.get_table_list()
-    db_table_description = data_connector.get_table_column_batch(table_list=full_table_list, is_mini=True)
+    data_source_orm = DataSourceOrm()
+    data_source_orm.url = "mysql+pymysql://root:Dmaidaas@10.12.51.162:3306/guangkuan_init"
+    data_source = DataSource()
+    data_source.init(data_source_orm)
+    full_table_list = data_source.get_table_list()
+    db_table_description = data_source.get_table_column_batch(table_list=full_table_list, is_mini=True)
     relevant_business = "工单、巡检任务、设备资金、设备、桌面办公、市政数据服务台、设备入库、忙碌&空闲、设备类型、设备数量、运维部门、资产、故障"
     generate_qa_prompt = generate_qa_prompt_template_v3.replace("{table_descriptions}", db_table_description).replace("{relevant_business}", relevant_business)
 
@@ -315,7 +315,7 @@ def test_v3():
                     continue
 
 
-                table_descriptions = data_connector.get_table_column_batch(relevant_tables)
+                table_descriptions = data_source.get_table_column_batch(relevant_tables)
 
                 generate_sql_prompt = generate_sql_prompt_template.replace("{table_descriptions}", table_descriptions).replace("{user_question}", translated_question)
 
@@ -326,7 +326,7 @@ def test_v3():
                 from magic_bi.plugin.sql_plugin import SqlPlugin
 
                 sql_plugin = SqlPlugin()
-                (ret, sql_output) = sql_plugin.run(sql_statement, data_connector.orm.url)
+                (ret, sql_output) = sql_plugin.run(sql_statement, data_source.orm.url)
                 if ret != 0:
                     print("execute the sql %s failed, the relevant_question is:%s" % (sql_statement, translated_question))
                     continue

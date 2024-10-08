@@ -77,9 +77,9 @@ def process_video(globals: Globals, data: Data, collection_id: str):
             except Exception as e:
                 logger.error("catch exception:%s" % str(e))
 
-        session = globals.sql_orm.get_session()
-        session.query(Data).filter(Data.file_id == data.file_id).update({"chat_analyse_status": ANALYSE_STATUS.PROCESSED.value, "update_timestamp": int(time.time() * 1000)})
-        session.commit()
+        # session = globals.sql_orm.get_session()
+        # session.query(Data).filter(Data.file_id == data.file_id).update({"chat_analyse_status": ANALYSE_STATUS.PROCESSED.value, "update_timestamp": int(time.time() * 1000)})
+        # session.commit()
 
 
     finally:
@@ -87,7 +87,7 @@ def process_video(globals: Globals, data: Data, collection_id: str):
             shutil.rmtree(tmp_dir_path)
             pass
 
-    logger.debug('load_video_by_file_bytes suc, analyse_types:%s, file_name:%s, collection_id:%s' % (analyse_types, data.file_name, collection_id))
+    # logger.debug('load_video_by_file_bytes suc, analyse_types:%s, file_name:%s, collection_id:%s' % (analyse_types, data.file_name, collection_id))
 
 def find_videos_in_directory(directory):
     import os

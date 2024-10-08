@@ -45,8 +45,8 @@ def create_app_router(prefix: str):
 
     @app_router.post("/app/get")
     def get_app(request: Request, body: Dict):
-        user_id = request.headers.get("user_id")
-        # user_id = body.get("user_id")
+        user_id = request.headers.get("user_id", "default")
+        
         app_list = APP_MANAGER.get_app(user_id)
 
         if app_list is not None:

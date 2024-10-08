@@ -9,7 +9,7 @@ from magic_bi.agent.base_agent import BaseAgent
 from magic_bi.message.message import Message
 from magic_bi.utils.globals import Globals
 from magic_bi.io.base_io import BaseIo
-from magic_bi.data.data_connector import DataConnector, DataConnectorOrm
+from magic_bi.data.data_source import DataSource, DataSourceOrm
 from magic_bi.agent.agent_meta import AgentMeta
 from magic_bi.agent.utils import get_env_info
 from magic_bi.plugin.sql_plugin import SqlPlugin
@@ -122,21 +122,21 @@ class FinetunedLlmSqlAgent(BaseAgent):
             if exact_message is not None:
                 sql_cmd = exact_message.assistant_output
 
-        data_connector: DataConnector = self.get_data_connector(self.agent_meta.user_id, message.data_connector_id)
+        data_source: DataSource = self.get_data_source(self.agent_meta.user_id, message.data_source_id)
         if sql_cmd == "":
-            if data_connector is None:
-                logger.error("process failed, relevant_data_connector_list cnt is 0")
+            if data_source is None:
+                logger.error("process failed, relevant_data_source_list cnt is 0")
                 return "", "", ""
 
-            full_table_list = data_connector.get_table_list()
-            table_descriptions = data_connector.get_table_column_batch(full_table_list, is_mini=True)
+            full_table_list = data_source.get_table_list()
+            table_descriptions = data_source.get_table_column_batch(full_table_list, is_mini=True)
             select_tables_prompt = select_tables_prompt_template.replace("{table_descriptions}", table_descriptions).\
                 replace("{user_question}", message.person_input)
             tables_list_str = self.globals.text2sql_llm_adapter.process(select_tables_prompt)
             relevant_table_list = decode_llm_output_in_json_list_format(tables_list_str)
 
             env_info = get_env_info()
-            relevant_table_descriptions = data_connector.get_table_column_batch(relevant_table_list)
+            relevant_table_descriptions = data_source.get_table_column_batch(relevant_table_list)
             generate_sql_prompt = generate_sql_prompt_template.replace("{env_info}", env_info).\
                                                                 replace("{relevant_table_descriptions}", relevant_table_descriptions).\
                                                                 replace("{user_question}", message.person_input)
@@ -144,7 +144,7 @@ class FinetunedLlmSqlAgent(BaseAgent):
 
 
         sql_plugin = SqlPlugin()
-        (ret, sql_output) = sql_plugin.run(sql_cmd, data_connector.orm.url)
+        (ret, sql_output) = sql_plugin.run(sql_cmd, data_source.orm.url)
 
         if message.with_humman_readable_output is True and sql_output.strip() != "":
             prompt_answer_user = build_prompt_make_sql_output_human_readable(message.person_input, sql_output)
@@ -160,14 +160,14 @@ class FinetunedLlmSqlAgent(BaseAgent):
         return sql_output, human_readable_output, sql_cmd
         # return sql_output, human_readable_output, sql_cmd, relevant_table_list
 
-    def get_data_connector(self, user_id: str, data_connector_id: str) -> DataConnector:
+    def get_data_source(self, user_id: str, data_source_id: str) -> DataSource:
         with Session(self.globals.sql_orm.engine) as session:
-            data_connector_orm_list: List[DataConnectorOrm] = session.query(DataConnectorOrm).filter(DataConnectorOrm.id == data_connector_id).all()
+            data_source_orm_list: List[DataSourceOrm] = session.query(DataSourceOrm).filter(DataSourceOrm.id == data_source_id).all()
 
-            if len(data_connector_orm_list) == 0:
-                logger.error("get_data_connector failed, user_id:%s, data_connector_id:%s" % (user_id, data_connector_id))
+            if len(data_source_orm_list) == 0:
+                logger.error("get_data_source failed, user_id:%s, data_source_id:%s" % (user_id, data_source_id))
                 return None
 
-            data_connector: DataConnector = DataConnector()
-            data_connector.init(data_connector_orm_list[0])
-            return data_connector
+            data_source: DataSource = DataSource()
+            data_source.init(data_source_orm_list[0])
+            return data_source

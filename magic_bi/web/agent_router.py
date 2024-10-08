@@ -62,8 +62,7 @@ def create_agent_router(prefix: str):
 
     @agent_router.post("/agent/get")
     def get_agent(request: Request, body: Dict):
-        user_id = request.headers.get("user_id")
-        # user_id = body.get("user_id")
+        user_id = request.headers.get("user_id", "default")
 
         agent_meta_list: List[AgentMeta] = AGENT_MANAGER.get(user_id)
         logger.debug("get suc, agent_meta cnt:%d" % len(agent_meta_list))

@@ -2,54 +2,54 @@ import json
 
 from loguru import logger
 from typing import List
-from magic_bi.data.data_connector import DataConnector
+from magic_bi.data.data_source import DataSource
 from magic_bi.model.base_llm_adapter import BaseLlmAdapter
 
-def get_relevant_data_connector(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_connector_list: List):
+def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_source_list: List):
     prompt_template = \
 '''[OPTIONAL DATA CONNECTORS]:
-    data_connector_name | data connector url | data connector meta info
+    data_source_name | data connector url | data connector meta info
     -----------------------
-    {provided_data_connectors}
+    {provided_data_sources}
 
 [OUTPUT FORMAT]:
-    {"data_connector_name": "data_connector_url"}
+    {"data_source_name": "data_source_url"}
 
 [EXAMPLE OUTPUT]:
-    {"data_connector_name1": "data_connector_url1", "data_connector_name2": "data_connector_url2"}
+    {"data_source_name1": "data_source_url1", "data_source_name2": "data_source_url2"}
 
 [PERSON INPUT]:
     {person_input}
 
-Based on the above, output the data_connectors which are relevant with the person input. Just output the json format data, no other explanation.'''
+Based on the above, output the data_sources which are relevant with the person input. Just output the json format data, no other explanation.'''
 
-    def build_prompt(person_input: str, data_connector_list: List[DataConnector]):
-        provided_data_connectors = ""
-        for data_connector in data_connector_list:
-            provided_data_connectors += data_connector.get_meta_info()
+    def build_prompt(person_input: str, data_source_list: List[DataSource]):
+        provided_data_sources = ""
+        for data_source in data_source_list:
+            provided_data_sources += data_source.get_meta_info()
 
         return prompt_template.replace("{person_input}", person_input). \
-            replace("{provided_data_connectors}", provided_data_connectors)
+            replace("{provided_data_sources}", provided_data_sources)
 
-    def decode_llm_output(output: str, authorized_data_connector_list: List) -> list[DataConnector]:
-        relevant_data_connector_list = []
+    def decode_llm_output(output: str, authorized_data_source_list: List) -> list[DataSource]:
+        relevant_data_source_list = []
         try:
-            relevant_data_connector_dict = json.loads(output)
-            for data_connector in authorized_data_connector_list:
-                if data_connector.name in relevant_data_connector_dict:
-                    relevant_data_connector_list.append(data_connector)
+            relevant_data_source_dict = json.loads(output)
+            for data_source in authorized_data_source_list:
+                if data_source.name in relevant_data_source_dict:
+                    relevant_data_source_list.append(data_source)
 
         except Exception as e:
             pass
 
-        return relevant_data_connector_list
+        return relevant_data_source_list
 
-    prompt = build_prompt(person_input, authorized_data_connector_list)
+    prompt = build_prompt(person_input, authorized_data_source_list)
     llm_output = llm_adapter.process(prompt)
-    relevant_data_connector_list = decode_llm_output(llm_output, authorized_data_connector_list=authorized_data_connector_list)
+    relevant_data_source_list = decode_llm_output(llm_output, authorized_data_source_list=authorized_data_source_list)
 
-    logger.debug("get_relevant_data_connector suc, relevant_data_connector_list cnt:%d" % len(relevant_data_connector_list))
-    return relevant_data_connector_list
+    logger.debug("get_relevant_data_source suc, relevant_data_source_list cnt:%d" % len(relevant_data_source_list))
+    return relevant_data_source_list
 
 def get_env_info() -> str:
     env_info = ""

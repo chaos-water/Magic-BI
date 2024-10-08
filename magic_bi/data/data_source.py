@@ -10,22 +10,23 @@ from sqlalchemy.orm import sessionmaker
 from magic_bi.db.sql_orm import BASE
 
 
-def get_qa_template_embedding_collection_id(data_connector_id: str):
-    return data_connector_id + "_qa_template"
+def get_qa_template_embedding_collection_id(data_source_id: str):
+    return data_source_id + "_qa_template"
 
-def get_table_description_embedding_collection_id(data_connector_id: str):
-    return data_connector_id + "_table_description"
+def get_table_description_embedding_collection_id(data_source_id: str):
+    return data_source_id + "_table_description"
 
-def get_domain_knowledge_embedding_collection_id(data_connector_id: str):
-    return data_connector_id + "_domain_knowledge"
+def get_domain_knowledge_embedding_collection_id(data_source_id: str):
+    return data_source_id + "_domain_knowledge"
 
-class DATA_CONNECTOR_TYPE(Enum):
+class DATA_SOURCE_TYPE(Enum):
     MYSQL = "mysql"
     POSTGRESQL = "postgresql"
     SQLITE = "sqlite"
 
-class DataConnectorOrm(BASE):
-    __tablename__ = "data_connector"
+class DataSourceOrm(BASE):
+
+    __tablename__ = "data_source"
     id = Column(String, nullable=False)
     user_id = Column(String, nullable=False, primary_key=True)
     name = Column(String, nullable=False, primary_key=True)
@@ -49,7 +50,7 @@ class DataConnectorOrm(BASE):
     def to_dict(self) -> Dict:
         return self.__dict__
 
-class DataConnector():
+class DataSource():
     def __init__(self):
         self.orm = None
         self.engine = None
@@ -61,13 +62,13 @@ class DataConnector():
         if self.engine is not None:
             self.engine.dispose()
 
-    def init(self, data_connector_orm: DataConnectorOrm) -> int:
-        self.orm = data_connector_orm
+    def init(self, data_source_orm: DataSourceOrm) -> int:
+        self.orm = data_source_orm
         self.engine = create_engine(self.orm.url)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-        logger.debug("DataConnector init suc")
+        logger.debug("DataSource init suc")
         return 0
 
     def get_table_column_batch(self, table_list: List, priority: str="", is_mini: bool = False):

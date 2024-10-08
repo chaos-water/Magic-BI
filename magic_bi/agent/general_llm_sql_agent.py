@@ -9,13 +9,13 @@ from magic_bi.agent.base_agent import BaseAgent
 from magic_bi.message.message import Message
 from magic_bi.utils.globals import Globals
 from magic_bi.io.base_io import BaseIo
-from magic_bi.data.data_connector import DataConnector
+from magic_bi.data.data_source import DataSource
 # from magic_bi.data.data import Data, DATA_TYPE
 from magic_bi.agent.agent_meta import AgentMeta
 # from magic_bi.model.base_llm_adapter import BaseLlmAdapter
 # from magic_bi.utils.globals import GLOBALS
 from magic_bi.agent.utils import get_env_info
-from magic_bi.data.data_connector import get_qa_template_embedding_collection_id, get_table_description_embedding_collection_id, get_domain_knowledge_embedding_collection_id
+from magic_bi.data.data_source import get_qa_template_embedding_collection_id, get_table_description_embedding_collection_id, get_domain_knowledge_embedding_collection_id
 # from magic_bi.message.llm_transaction import LlmTransaction, LLM_TRANSACTION_TYPE
 
 def decode_llm_output_in_json_list_format(input_text: str) -> list:
@@ -131,17 +131,17 @@ class GeneralLlmSqlAgent(BaseAgent):
         return 0
 
     def process_v1(self, message: Message) -> str:
-        data_connector: DataConnector = self.get_data_connector(self.agent_meta.user_id, message.data_connector_id)
-        if data_connector is None:
-            logger.error("process failed, relevant_data_connector_list cnt is 0")
+        data_source: DataSource = self.get_data_source(self.agent_meta.user_id, message.data_source_id)
+        if data_source is None:
+            logger.error("process failed, relevant_data_source_list cnt is 0")
             return "", "", "", ""
 
-        sql_output, human_readable_output, sql_cmd, few_shot_examples = self.process_in_few_shot_examples_mode(message, data_connector)
+        sql_output, human_readable_output, sql_cmd, few_shot_examples = self.process_in_few_shot_examples_mode(message, data_source)
         if sql_output != "":
             logger.debug("process suc")
             return sql_output, human_readable_output, sql_cmd, few_shot_examples
 
-        sql_output, human_readable_output, sql_cmd, few_shot_examples = self.process_in_free_mode(message, data_connector)
+        sql_output, human_readable_output, sql_cmd, few_shot_examples = self.process_in_free_mode(message, data_source)
 
         logger.debug("process suc")
         return sql_output, human_readable_output, sql_cmd, few_shot_examples
@@ -154,9 +154,9 @@ class GeneralLlmSqlAgent(BaseAgent):
     #
     #     return env_info
 
-    def get_relevant_tables(self, person_input: str, data_connector: DataConnector, relevant_table_descriptions: str, relevant_domain_knowledge: str,
+    def get_relevant_tables(self, person_input: str, data_source: DataSource, relevant_table_descriptions: str, relevant_domain_knowledge: str,
                             relevant_qa_template: str, message_id: str) -> (list, list):
-        full_table_names = data_connector.get_table_list()
+        full_table_names = data_source.get_table_list()
 
         select_tables_from_refecenced_sql_prompt = select_tables_from_referenced_sql_prompt_template.replace(
             "{database_table_names}", str(full_table_names)).replace("{relevant_table_descriptions}",
@@ -226,27 +226,27 @@ class GeneralLlmSqlAgent(BaseAgent):
         return output_table_description
 
     def process(self, message: Message):
-        data_connector: DataConnector = self.get_data_connector(self.agent_meta.user_id, message.data_connector_id)
-        if data_connector is None:
-            logger.error("process failed, relevant_data_connector_list cnt is 0")
+        data_source: DataSource = self.get_data_source(self.agent_meta.user_id, message.data_source_id)
+        if data_source is None:
+            logger.error("process failed, relevant_data_source_list cnt is 0")
             return "", "", "", "", "", "", ""
 
         user_question_vector = self.globals.text_embedding.get(message.person_input)
 
 
-        user_qa_template = self.get_user_qa_template(user_question_vector, data_connector.id)
-        user_domain_knowledge = self.get_full_domain_knowledge(data_connector.id)
-        user_table_descriptions = self.get_user_table_descriptions(user_question_vector, data_connector.id)
+        user_qa_template = self.get_user_qa_template(user_question_vector, data_source.id)
+        user_domain_knowledge = self.get_full_domain_knowledge(data_source.id)
+        user_table_descriptions = self.get_user_table_descriptions(user_question_vector, data_source.id)
 
         table_list_from_referenced_sql, table_list_from_llm_guess = self.get_relevant_tables(message.person_input,
-                                                                                             data_connector,
+                                                                                             data_source,
                                                                                              user_table_descriptions,
                                                                                              user_domain_knowledge,
                                                                                              user_qa_template,
                                                                                              message.id)
 
-        relevant_table_column = data_connector.get_table_column_batch(table_list_from_referenced_sql, "high")
-        relevant_table_column += data_connector.get_table_column_batch(table_list_from_llm_guess, "low")
+        relevant_table_column = data_source.get_table_column_batch(table_list_from_referenced_sql, "high")
+        relevant_table_column += data_source.get_table_column_batch(table_list_from_llm_guess, "low")
 
         env_info = get_env_info()
 
@@ -257,7 +257,7 @@ class GeneralLlmSqlAgent(BaseAgent):
         sql_cmd = self.globals.general_llm_adapter.process(generate_sql_prompt)
         from magic_bi.plugin.sql_plugin import SqlPlugin
         sql_plugin = SqlPlugin()
-        (ret, sql_output) = sql_plugin.run(sql_cmd, data_connector.url)
+        (ret, sql_output) = sql_plugin.run(sql_cmd, data_source.url)
 
         if message.with_humman_readable_output is True and sql_output.strip() != "":
             prompt_answer_user = build_prompt_make_sql_output_human_readable(message.person_input, sql_output)
@@ -283,9 +283,9 @@ class GeneralLlmSqlAgent(BaseAgent):
     #         session.add(transaction)
     #         session.commit()
 
-    def get_user_qa_template(self, user_question_vector: List, data_connector_id: str) -> str:
+    def get_user_qa_template(self, user_question_vector: List, data_source_id: str) -> str:
         few_shot_examples = ""
-        collection_id = get_qa_template_embedding_collection_id(data_connector_id)
+        collection_id = get_qa_template_embedding_collection_id(data_source_id)
         result_list = self.globals.qdrant_adapter.search(collection_id, user_question_vector, cnt=2)
 
         index = 0
@@ -303,9 +303,9 @@ class GeneralLlmSqlAgent(BaseAgent):
 
         return few_shot_examples
 
-    def get_user_table_descriptions(self, user_question_vector: List, data_connector_id: str) -> str:
-        # table_name_collection_id = get_table_name_template_embedding_collection_id(data_connector_id)
-        collection_id = get_table_description_embedding_collection_id(data_connector_id)
+    def get_user_table_descriptions(self, user_question_vector: List, data_source_id: str) -> str:
+        # table_name_collection_id = get_table_name_template_embedding_collection_id(data_source_id)
+        collection_id = get_table_description_embedding_collection_id(data_source_id)
         result_list = self.globals.qdrant_adapter.search(collection_id, user_question_vector, cnt=10)
 
         table_descriptions = ""
@@ -328,8 +328,8 @@ class GeneralLlmSqlAgent(BaseAgent):
     # def get_table_column_descriptions(self):
     #     pass
 
-    def get_relevant_domain_knowledge(self, user_question_vector: List, data_connector_id: str) -> str:
-        collection_id = get_domain_knowledge_embedding_collection_id(data_connector_id)
+    def get_relevant_domain_knowledge(self, user_question_vector: List, data_source_id: str) -> str:
+        collection_id = get_domain_knowledge_embedding_collection_id(data_source_id)
         result_list = self.globals.qdrant_adapter.search(collection_id, user_question_vector, cnt=10, score_threshold=0.0)
         # result_list = self.globals.qdrant_adapter.get_points(collection_id)
 
@@ -348,13 +348,13 @@ class GeneralLlmSqlAgent(BaseAgent):
 
         return domain_knowledge
 
-    def get_full_domain_knowledge(self, data_connector_id: str) -> str:
+    def get_full_domain_knowledge(self, data_source_id: str) -> str:
         # domain_knowledge_list = []
         domain_knowledge = ""
-        from magic_bi.data.data_connector_knowledge.domain_knowledge import DomainKnowledge
+        from magic_bi.data.data_source_knowledge.domain_knowledge import DomainKnowledge
         try:
             with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-                results = session.query(DomainKnowledge).filter(DomainKnowledge.data_connector_id == data_connector_id).all()
+                results = session.query(DomainKnowledge).filter(DomainKnowledge.data_source_id == data_source_id).all()
 
                 index = 0
                 for result in results:
@@ -369,15 +369,15 @@ class GeneralLlmSqlAgent(BaseAgent):
         logger.debug("get_full_domain_knowledge suc")
         return domain_knowledge
 
-    def get_data_connector(self, user_id: str, data_connector_id: str) -> DataConnector:
+    def get_data_source(self, user_id: str, data_source_id: str) -> DataSource:
         with Session(self.globals.sql_orm.engine) as session:
-            data_connector_list: List[DataConnector] = session.query(DataConnector).filter(DataConnector.id == data_connector_id).all()
+            data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data_source_id).all()
 
-            if len(data_connector_list) == 0:
-                logger.error("get_data_connector failed, user_id:%s, data_connector_id:%s" % (user_id, data_connector_id))
+            if len(data_source_list) == 0:
+                logger.error("get_data_source failed, user_id:%s, data_source_id:%s" % (user_id, data_source_id))
                 return None
 
-            data_connector: DataConnector = data_connector_list[0]
-            # data_connector.generate_db_ddl()
+            data_source: DataSource = data_source_list[0]
+            # data_source.generate_db_ddl()
 
-            return data_connector
+            return data_source

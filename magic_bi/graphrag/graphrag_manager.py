@@ -19,18 +19,18 @@ class GraphRagManager(object):
         self.globals = globals
         logger.debug("init suc")
 
-    def create_schema(self, data_connector_id: str, graph_id: str) -> int:
-        # data_connector_id = ""
+    def create_schema(self, data_source_id: str, graph_id: str) -> int:
+        # data_source_id = ""
         from sqlalchemy.orm.session import Session
         from sqlalchemy import update
-        from magic_bi.web.data_connector_router import DATA_CONNECTOR_MANAGER
-        from magic_bi.data.data_connector import DataConnector
+        from magic_bi.web.data_source_router import DATA_CONNECTOR_MANAGER
+        from magic_bi.data.data_source import DataSource
         from magic_bi.graphrag.graphrag import GraphRag
-        data_connector: DataConnector = DATA_CONNECTOR_MANAGER.get(id=data_connector_id)
+        data_source: DataSource = DATA_CONNECTOR_MANAGER.get(id=data_source_id)
 
-        data_connector.get_db_ddl()
+        data_source.get_db_ddl()
 
-        prompt = sql_db_create_schema_prompt_template.replace("", data_connector.db_ddl)
+        prompt = sql_db_create_schema_prompt_template.replace("", data_source.db_ddl)
         graph_schema_llm_output = self.globals.general_llm_adapter.process(prompt)
 
         with Session(GLOBALS.sql_orm.engine, expire_on_commit=False) as session:

@@ -1,5 +1,5 @@
 from loguru import logger
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from typing import Dict
 
 # from entity.collection import Collection
@@ -31,8 +31,8 @@ def create_user_router(prefix: str):
         return get_http_rsp(data={"user_id": user.user_id})
 
     @user_router.post("/user/delete")
-    def delete_user(body: Dict):
-        user_id = body.get("user_id")
+    def delete_user(request: Request, body: Dict):
+        user_id = request.headers.get("user_id", "default")
 
         session = GLOBALS.sql_orm.get_session()
         user: User = session.query(User).filter(User.user_id == user_id).first()

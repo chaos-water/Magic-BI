@@ -9,7 +9,7 @@ from magic_bi.utils.utils import init_log
 from magic_bi.utils.globals import GLOBAL_CONFIG, GLOBALS
 from magic_bi.utils.init_orm_entity import init_entity
 from magic_bi.web.agent_router import create_agent_router
-from magic_bi.web.data_connector_router import create_data_connector_router
+from magic_bi.web.data_source_router import create_data_source_router
 from magic_bi.web.data_router import create_data_router
 from magic_bi.web.recommend_router import create_recommend_router
 from magic_bi.web.user_router import create_user_router
@@ -66,7 +66,7 @@ def main():
         init_mq_process(rabbitmq_config=GLOBAL_CONFIG.rabbitmq_config, func_callback=test_func)
 
     app.include_router(create_agent_router(GLOBAL_CONFIG.web_config.url_prefix))
-    app.include_router(create_data_connector_router(GLOBAL_CONFIG.web_config.url_prefix))
+    app.include_router(create_data_source_router(GLOBAL_CONFIG.web_config.url_prefix))
     app.include_router(create_data_router(GLOBAL_CONFIG.web_config.url_prefix))
     app.include_router(create_dataset_router(GLOBAL_CONFIG.web_config.url_prefix))
     app.include_router(create_recommend_router(GLOBAL_CONFIG.web_config.url_prefix))

@@ -6,10 +6,10 @@ from typing import List
 
 from magic_bi.agent.base_agent import BaseAgent
 from magic_bi.message.message import Message
-from magic_bi.agent.utils import get_relevant_data_connector
+from magic_bi.agent.utils import get_relevant_data_source
 from magic_bi.utils.globals import Globals
 from magic_bi.io.base_io import BaseIo
-from magic_bi.data.data_connector import DataConnector
+from magic_bi.data.data_source import DataSource
 from magic_bi.data.data import Data, DATA_TYPE
 from magic_bi.agent.agent_meta import AgentMeta
 from magic_bi.model.base_llm_adapter import BaseLlmAdapter
@@ -22,9 +22,9 @@ from magic_bi.utils.globals import GLOBALS
 '''
 sqlalchemy_prompt_template_query_data = '''
 [OPTIONAL DATA CONNECTORS]:
-data_connector_name | data_connector_url ｜ table descriptions
+data_source_name | data_source_url ｜ table descriptions
 -----------------------
-{provided_data_connectors}
+{provided_data_sources}
 
 [PERSON INPUT]:
 {person_input}
@@ -74,9 +74,9 @@ DO NOT NEED ANY EXPLANATION.
 """
 pandas_prompt_template_query_data = '''
 [OPTIONAL DATA CONNECTORS]:
-data_connector_name | data_connector_url ｜ table descriptions
+data_source_name | data_source_url ｜ table descriptions
 -----------------------
-{provided_data_connectors}
+{provided_data_sources}
 
 [PERSON INPUT]:
 {person_input}
@@ -137,21 +137,21 @@ DO NOT NEED ANY EXPLANATION.
 '''
 
 
-def build_prompt_query_data(person_input: str, data_connector_list: List[DataConnector], memmory: str):
-    provided_data_connectors = ""
-    for data_connector in data_connector_list:
-        provided_data_connectors += data_connector.get_meta_info()
+def build_prompt_query_data(person_input: str, data_source_list: List[DataSource], memmory: str):
+    provided_data_sources = ""
+    for data_source in data_source_list:
+        provided_data_sources += data_source.get_meta_info()
 
     return sqlalchemy_prompt_template_query_data.replace("{person_input}", person_input). \
-        replace("{provided_data_connectors}", provided_data_connectors)
+        replace("{provided_data_sources}", provided_data_sources)
         # replace("{memmory}", memmory)
 
 
 prompt_template_query_data_fix_error = '''
 [OPTIONAL DATA CONNECTORS]:
-data_connector_name | data_connector_url ｜ table descriptions
+data_source_name | data_source_url ｜ table descriptions
 -----------------------
-{provided_data_connectors}
+{provided_data_sources}
 
 [PERSON INPUT]:
 {person_input}
@@ -166,13 +166,13 @@ Based on the above, fix previous code error to accomplish to satisfy user requir
 '''
 
 
-def build_prompt_query_data_fix_error(person_input: str, data_connector_list: List[DataConnector], previous_code: str = "", previous_error: str = ""):
-    provided_data_connectors = ""
-    for data_connector in data_connector_list:
-        provided_data_connectors += data_connector.get_meta_info()
+def build_prompt_query_data_fix_error(person_input: str, data_source_list: List[DataSource], previous_code: str = "", previous_error: str = ""):
+    provided_data_sources = ""
+    for data_source in data_source_list:
+        provided_data_sources += data_source.get_meta_info()
 
     return prompt_template_query_data_fix_error.replace("{person_input}", person_input). \
-                                                replace("{provided_data_connectors}", provided_data_connectors). \
+                                                replace("{provided_data_sources}", provided_data_sources). \
                                                 replace("{person_input}", person_input). \
                                                 replace("{previous_code}", previous_code). \
                                                 replace("{previous_error}", previous_error)
@@ -223,53 +223,53 @@ def decode_llm_output_answer_user(output: str) -> str:
 [CONTEXT OF THE PREVIOUS CONVERSATION]
 {memmory}
 """
-def get_relevant_data_connector(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_connector_list: List, memmory: str):
-    prompt_template_relevant_data_connector = '''
+def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_source_list: List, memmory: str):
+    prompt_template_relevant_data_source = '''
 [OPTIONAL DATA CONNECTORS]:
-    data_connector_name | data connector url | data connector meta info
+    data_source_name | data connector url | data connector meta info
     -----------------------
-    {provided_data_connectors}
+    {provided_data_sources}
 
 [OUTPUT FORMAT]:
-    {"data_connector_name": "data_connector_url"}
+    {"data_source_name": "data_source_url"}
 
 [EXAMPLE OUTPUT]:
-    {"data_connector_name1": "data_connector_url1", "data_connector_name2": "data_connector_url2"}
+    {"data_source_name1": "data_source_url1", "data_source_name2": "data_source_url2"}
 
 [PERSON INPUT]:
     {person_input}
 
-Based on the above, output the data_connectors which are relevant with the person input. Just output the json format data, no other explanation.
+Based on the above, output the data_sources which are relevant with the person input. Just output the json format data, no other explanation.
 '''
 
-    def build_prompt_relevant_data_connector(person_input: str, data_connector_list: List[DataConnector], memmory: str=""):
-        provided_data_connectors = ""
-        for data_connector in data_connector_list:
-            provided_data_connectors += data_connector.get_meta_info()
+    def build_prompt_relevant_data_source(person_input: str, data_source_list: List[DataSource], memmory: str= ""):
+        provided_data_sources = ""
+        for data_source in data_source_list:
+            provided_data_sources += data_source.get_meta_info()
 
-        return prompt_template_relevant_data_connector.replace("{person_input}", person_input). \
-            replace("{provided_data_connectors}", provided_data_connectors)
-            # replace("{provided_data_connectors}", provided_data_connectors).replace("{memmory}", memmory)
+        return prompt_template_relevant_data_source.replace("{person_input}", person_input). \
+            replace("{provided_data_sources}", provided_data_sources)
+            # replace("{provided_data_sources}", provided_data_sources).replace("{memmory}", memmory)
 
-    def decode_llm_output_relevant_data_connector(output: str, authorized_data_connector_list: List) -> list[DataConnector]:
-        relevant_data_connector_list = []
+    def decode_llm_output_relevant_data_source(output: str, authorized_data_source_list: List) -> list[DataSource]:
+        relevant_data_source_list = []
         try:
-            relevant_data_connector_dict = json.loads(output)
-            for data_connector in authorized_data_connector_list:
-                if data_connector.name in relevant_data_connector_dict:
-                    relevant_data_connector_list.append(data_connector)
+            relevant_data_source_dict = json.loads(output)
+            for data_source in authorized_data_source_list:
+                if data_source.name in relevant_data_source_dict:
+                    relevant_data_source_list.append(data_source)
 
         except Exception as e:
             pass
 
-        return relevant_data_connector_list
+        return relevant_data_source_list
 
-    prompt = build_prompt_relevant_data_connector(person_input, authorized_data_connector_list, memmory)
+    prompt = build_prompt_relevant_data_source(person_input, authorized_data_source_list, memmory)
     llm_output = llm_adapter.process(prompt)
-    relevant_data_connector_list = decode_llm_output_relevant_data_connector(llm_output, authorized_data_connector_list=authorized_data_connector_list)
+    relevant_data_source_list = decode_llm_output_relevant_data_source(llm_output, authorized_data_source_list=authorized_data_source_list)
 
-    logger.debug("get_relevant_data_connector suc, relevant_data_connector_list cnt:%d" % len(relevant_data_connector_list))
-    return relevant_data_connector_list
+    logger.debug("get_relevant_data_source suc, relevant_data_source_list cnt:%d" % len(relevant_data_source_list))
+    return relevant_data_source_list
 
 '''
 [CONTEXT OF THE PREVIOUS CONVERSATION]
@@ -298,18 +298,17 @@ Based on the above, output the data which are relevant with the person input. Ju
         if data.type == DATA_TYPE.DOC.value:
             str_with_meta_info = "%s | \n" % (data.name)
         elif data.type == DATA_TYPE.SQL_DB.value:
-            # data_connector: DataConnector = DataConnector()
             from sqlalchemy.orm.session import Session
             from typing import List
 
             with Session(GLOBALS.sql_orm.engine) as session:
-                data_connector_list: List[DataConnector] = session.query(DataConnector).filter(DataConnector.id == data.hash).all()
-                if len(data_connector_list) == 0:
+                data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data.hash).all()
+                if len(data_source_list) == 0:
                     return ""
 
-                data_connector: DataConnector = data_connector_list[0]
-                data_connector.generate_meta_info()
-                str_with_meta_info = "%s | %s\n" % (data.name, data_connector.meta_info_list)
+                data_source: DataSource = data_source_list[0]
+                data_source.generate_meta_info()
+                str_with_meta_info = "%s | %s\n" % (data.name, data_source.meta_info_list)
         else:
             pass
 
@@ -359,8 +358,8 @@ class PandasAgent(BaseAgent):
 
     def process(self, message: Message) -> str:
         assistant_output = ""
-        if message.data_connector_id != "":
-            assistant_output = self.process_in_data_connector_type(message)
+        if message.data_source_id != "":
+            assistant_output = self.process_in_data_source_type(message)
         elif message.dataset_id != "":
             assistant_output = self.process_in_dataset_type(message)
         elif message.data_id != "":
@@ -375,12 +374,12 @@ class PandasAgent(BaseAgent):
         logger.debug("process suc")
         return assistant_output
 
-    def process_in_data_connector_type(self, message: Message) -> str:
-        relevant_data_connector = self.get_relevant_data_connector_from_input(self.agent_meta.user_id,
+    def process_in_data_source_type(self, message: Message) -> str:
+        relevant_data_source = self.get_relevant_data_source_from_input(self.agent_meta.user_id,
                                                                               message.person_input,
-                                                                              message.data_connector_id)
+                                                                              message.data_source_id)
 
-        prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_connector, self.memmory.get_memory_str())
+        prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_source, self.memmory.get_memory_str())
         llm_output_query_data = self.globals.general_llm_adapter.process(prompt_query_data)
         from magic_bi.plugin.python_plugin import PythonPlugin
         python_plugin: PythonPlugin = PythonPlugin()
@@ -391,7 +390,7 @@ class PandasAgent(BaseAgent):
             if ret == 0:
                 break
 
-            prompt_query_data_fix_error = build_prompt_query_data_fix_error(message.person_input, relevant_data_connector, cleaned_python_code, python_output)
+            prompt_query_data_fix_error = build_prompt_query_data_fix_error(message.person_input, relevant_data_source, cleaned_python_code, python_output)
             llm_output_query_data = self.globals.general_llm_adapter.process(prompt_query_data_fix_error)
 
             retry_cnt += 1
@@ -402,13 +401,13 @@ class PandasAgent(BaseAgent):
         prompt_answer_user = build_prompt_answer_user(message.person_input, python_output, self.memmory.get_memory_str())
         assistant_output = self.globals.general_llm_adapter.process(prompt_answer_user)
 
-        logger.debug("process_in_data_connector_type suc")
+        logger.debug("process_in_data_source_type suc")
         return assistant_output
 
     def process_in_dataset_type(self, message: Message) -> str:
-        relevant_data_connector = self.get_relevant_data_from_input(self.agent_meta.user_id, message.person_input, message.dataset_id)
+        relevant_data_source = self.get_relevant_data_from_input(self.agent_meta.user_id, message.person_input, message.dataset_id)
         # from magic_bi.agent.pandas_agent.prompt import build_prompt_query_data, build_prompt_answer_user
-        prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_connector)
+        prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_source)
         llm_output_query_data = self.globals.general_llm_adapter.process(prompt_query_data)
         # cleaned_llm_output_query_data = self.try_to_clean_python_code(llm_output_query_data)
         from magic_bi.plugin.python_plugin import PythonPlugin
@@ -423,8 +422,8 @@ class PandasAgent(BaseAgent):
         return assistant_output
 
     def process_in_data_type(self, message: Message) -> str:
-        relevant_data_connector = self.get_relevant_data_from_input(self.agent_meta.user_id, message.person_input, message.dataset_id)
-        prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_connector)
+        relevant_data_source = self.get_relevant_data_from_input(self.agent_meta.user_id, message.person_input, message.dataset_id)
+        prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_source)
         llm_output_query_data = self.globals.general_llm_adapter.process(prompt_query_data)
         # cleaned_llm_output_query_data = self.try_to_clean_python_code(llm_output_query_data)
         from magic_bi.plugin.python_plugin import PythonPlugin
@@ -446,9 +445,9 @@ class PandasAgent(BaseAgent):
                 self.io.output(self.globals.tips.get_tips().USER_INPUT_IS_EMPTY.value)
                 continue
 
-            relevant_data_connector = self.get_relevant_data_connector_from_input("test_user", message.person_input)
+            relevant_data_source = self.get_relevant_data_source_from_input("test_user", message.person_input)
             from magic_bi.agent.pandas_agent.prompt import build_prompt_query_data, build_prompt_answer_user
-            prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_connector)
+            prompt_query_data = build_prompt_query_data(message.person_input, relevant_data_source)
             llm_output_query_data = self.globals.general_llm_adapter.process(prompt_query_data)
 
             prompt_answer_user = build_prompt_answer_user(message.person_input, llm_output_query_data)
@@ -456,29 +455,29 @@ class PandasAgent(BaseAgent):
             message.assistant_output = llm_output_answer_user
             self.io.output(message.assistant_output)
 
-    def get_relevant_data_connector_from_input(self, user_id: str, person_input: str, data_connector_id: str) -> list[DataConnector]:
-        if data_connector_id != "all":
+    def get_relevant_data_source_from_input(self, user_id: str, person_input: str, data_source_id: str) -> list[DataSource]:
+        if data_source_id != "all":
             with Session(self.globals.sql_orm.engine) as session:
-                relevant_data_connector_list: List[DataConnector] = session.query(DataConnector).filter(DataConnector.id == data_connector_id).all()
+                relevant_data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data_source_id).all()
 
         else:
             with Session(self.globals.sql_orm.engine) as session:
-                authorized_data_connector_list: List[DataConnector] = session.query(DataConnector).filter(DataConnector.user_id == user_id).all()
+                authorized_data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.user_id == user_id).all()
 
-            for authorized_data_connector in authorized_data_connector_list:
-                authorized_data_connector.generate_meta_info()
+            for authorized_data_source in authorized_data_source_list:
+                authorized_data_source.generate_meta_info()
 
-            relevant_data_connector_list: str = get_relevant_data_connector(self.globals.general_llm_adapter, person_input,
-                                                                            authorized_data_connector_list,
+            relevant_data_source_list: str = get_relevant_data_source(self.globals.general_llm_adapter, person_input,
+                                                                            authorized_data_source_list,
                                                                             self.memmory.get_memory_str())
 
-        for relevant_data_connector in relevant_data_connector_list:
-            relevant_data_connector.generate_meta_info()
+        for relevant_data_source in relevant_data_source_list:
+            relevant_data_source.generate_meta_info()
 
-        logger.debug("get_relevant_data_connector_from_input suc")
-        return relevant_data_connector_list
+        logger.debug("get_relevant_data_source_from_input suc")
+        return relevant_data_source_list
 
-    def get_relevant_data_from_input(self, user_id: str, person_input: str, dataset_id: str, memmory: str) -> list[DataConnector]:
+    def get_relevant_data_from_input(self, user_id: str, person_input: str, dataset_id: str, memmory: str) -> list[DataSource]:
         with Session(self.globals.sql_orm.engine) as session:
             authorized_data_list: List[Data] = session.query(Data).filter(Data.dataset_id == dataset_id, Data.user_id == user_id).all()
 

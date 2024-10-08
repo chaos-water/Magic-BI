@@ -48,7 +48,7 @@ class Memmory:
 
     def try_get_exact_message(self, input_message: Message) -> Message:
         with self.globals.timescale_orm.get_session() as session:
-            message_list: List[Message] = session.query(Message).filter(Message.data_connector_id == input_message.data_connector_id).\
+            message_list: List[Message] = session.query(Message).filter(Message.data_source_id == input_message.data_source_id).\
                 filter(Message.dataset_id == input_message.dataset_id).filter(Message.person_input_hash == input_message.person_input_hash).\
                 limit(1).all()
             if len(message_list) > 0:

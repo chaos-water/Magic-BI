@@ -18,7 +18,7 @@ def create_data_router(prefix: str):
     def add_file(request: Request, file = File(), dataset_id = Form()):
         data: Data = Data()
         data.dataset_id = dataset_id
-        data.user_id = request.headers.get("user_id")
+        data.user_id = request.headers.get("user_id", "default")
         data.from_upload_file(file)
         ret = DATA_MANAGER.add(data)
 
@@ -44,8 +44,8 @@ def create_data_router(prefix: str):
 
     @data_router.post("/data/get")
     def get_data(request: Request, body: Dict):
-        user_id = request.headers.get("user_id")
-        # user_id = body.get("user_id")
+        user_id = request.headers.get("user_id", "default")
+        
         dataset_id = body.get("dataset_id")
         page_index = int(body.get("page_index", 1))
         page_size = int(body.get("page_size", 10))

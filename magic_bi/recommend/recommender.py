@@ -2,7 +2,7 @@ from loguru import logger
 from sqlalchemy.orm import Session
 from typing import List
 
-from magic_bi.data.data_connector import DataConnector
+from magic_bi.data.data_source import DataSource
 from magic_bi.utils.globals import Globals
 
 data_zero_recommend_prompt_template = '''
@@ -24,11 +24,11 @@ The list of questions should be diverse, and the questions should be prioritized
 You just need to output the questions, no others(including explanations and sql queries) needed.
 '''
 
-data_connector_zero_recommend_prompt_template = '''
+data_source_zero_recommend_prompt_template = '''
 [OPTIONAL DATA CONNECTORS]:
-data_connector_name | data_connector_url ｜ table descriptions
+data_source_name | data_source_url ｜ table descriptions
 -----------------------
-{provided_data_connectors}
+{provided_data_sources}
 
 [USER PROFILE]:
 {user_profile}
@@ -47,9 +47,9 @@ You just need to output the questions, no others(including explanations and sql 
 
 relevant_prompt_template = '''
 [OPTIONAL DATA CONNECTORS]:
-data_connector_name | data_connector_url ｜ table descriptions
+data_source_name | data_source_url ｜ table descriptions
 -----------------------
-{provided_data_connectors}
+{provided_data_sources}
 
 [USER PROFILE]:
 {user_profile}
@@ -84,28 +84,28 @@ class Recommender():
 
         return 0
 
-    def zero_recommend(self, user_id: str, data_connector_id: str, dataset_id: str, data_id: str, count: int) -> List[str]:
+    def zero_recommend(self, user_id: str, data_source_id: str, dataset_id: str, data_id: str, count: int) -> List[str]:
         recomendation_list = []
-        if data_connector_id != "":
-            recomendation_list = self.zero_recommend_by_data_connector(user_id, data_connector_id, count)
+        if data_source_id != "":
+            recomendation_list = self.zero_recommend_by_data_source(user_id, data_source_id, count)
         elif dataset_id != "":
             recomendation_list = self.zero_recommend_by_dataset(user_id, dataset_id)
         elif data_id != "":
             recomendation_list = self.zero_recommend_by_data(user_id, data_id)
         else:
-            logger.error("zero_recommend failed, data_connector_id:%s dataset_id:%s" % (data_connector_id, dataset_id))
+            logger.error("zero_recommend failed, data_source_id:%s dataset_id:%s" % (data_source_id, dataset_id))
 
         logger.debug("zero_recommend suc, recomendation_list cnt:%d" % len(recomendation_list))
         return recomendation_list
 
-    def zero_recommend_by_data_connector(self, user_id: str, data_connector_id: str, count: int) -> List[str]:
-        relevant_data_connector = self.get_relevant_data_connector_from_input(user_id, data_connector_id)
-        provided_data_connectors = ""
-        for data_connector in relevant_data_connector:
-            data_connector.generate_meta_info()
-            provided_data_connectors += data_connector.get_meta_info()
+    def zero_recommend_by_data_source(self, user_id: str, data_source_id: str, count: int) -> List[str]:
+        relevant_data_source = self.get_relevant_data_source_from_input(user_id, data_source_id)
+        provided_data_sources = ""
+        for data_source in relevant_data_source:
+            data_source.generate_meta_info()
+            provided_data_sources += data_source.get_meta_info()
 
-        recommend_prompt = (data_connector_zero_recommend_prompt_template.replace("{provided_data_connectors}", provided_data_connectors).\
+        recommend_prompt = (data_source_zero_recommend_prompt_template.replace("{provided_data_sources}", provided_data_sources).\
                             replace("{user_profile}", self._get_user_profile(user_id))).\
                             replace("{count}", str(count))
         llm_output = self.globals.general_llm_adapter.process(recommend_prompt)
@@ -116,13 +116,13 @@ class Recommender():
         return recomendation_list
 
     def zero_recommend_by_dataset(self, user_id: str, dataset_id: str) -> List[str]:
-        relevant_data_connector = self.get_relevant_data_connector_from_input(user_id, dataset_id)
-        provided_data_connectors = ""
-        for data_connector in relevant_data_connector:
-            data_connector.generate_meta_info()
-            provided_data_connectors += data_connector.get_meta_info()
+        relevant_data_source = self.get_relevant_data_source_from_input(user_id, dataset_id)
+        provided_data_sources = ""
+        for data_source in relevant_data_source:
+            data_source.generate_meta_info()
+            provided_data_sources += data_source.get_meta_info()
 
-        recommend_prompt = data_connector_zero_recommend_prompt_template.format(provided_data_connectors=provided_data_connectors, user_profile=self._get_user_profile(user_id))
+        recommend_prompt = data_source_zero_recommend_prompt_template.format(provided_data_sources=provided_data_sources, user_profile=self._get_user_profile(user_id))
         llm_output = self.globals.general_llm_adapter.process(recommend_prompt)
 
         recomendation_list = llm_output.split("\n")
@@ -135,13 +135,13 @@ class Recommender():
         if ret > 0:
             pass
 
-        # relevant_data_connector = self.get_relevant_data_connector_from_input(user_id, dataset_id)
-        # provided_data_connectors = ""
-        # for data_connector in relevant_data_connector:
-        #     data_connector.generate_meta_info()
-        #     provided_data_connectors += data_connector.to_str_with_meta_info()
+        # relevant_data_source = self.get_relevant_data_source_from_input(user_id, dataset_id)
+        # provided_data_sources = ""
+        # for data_source in relevant_data_source:
+        #     data_source.generate_meta_info()
+        #     provided_data_sources += data_source.to_str_with_meta_info()
 
-        # recommend_prompt = data_connector_zero_recommend_prompt_template.format(provided_data_connectors=provided_data_connectors, user_profile=self._get_user_profile(user_id))
+        # recommend_prompt = data_source_zero_recommend_prompt_template.format(provided_data_sources=provided_data_sources, user_profile=self._get_user_profile(user_id))
         # llm_output = self.globals.llm_adapter.process(recommend_prompt)
         #
         # recomendation_list = llm_output.split("\n")
@@ -149,27 +149,27 @@ class Recommender():
         # logger.debug("zero_recommend suc, recomendation cnt:%d" % len(recomendation_list))
         # return recomendation_list
 
-    def relevant_recommend(self, user_id: str, previous_user_input: str, data_connector_id: str, dataset_id: str, data_id: str) -> List[str]:
+    def relevant_recommend(self, user_id: str, previous_user_input: str, data_source_id: str, dataset_id: str, data_id: str) -> List[str]:
         recomendation_list = []
-        if data_connector_id != "":
-            recomendation_list = self.relevant_recommend_by_data_connector(user_id, data_connector_id, previous_user_input)
+        if data_source_id != "":
+            recomendation_list = self.relevant_recommend_by_data_source(user_id, data_source_id, previous_user_input)
         elif dataset_id != "":
             recomendation_list = self.relevant_recommend_by_dataset(user_id, dataset_id, previous_user_input)
         elif data_id != "":
             recomendation_list = self.relevant_recommend_by_data(user_id, data_id, previous_user_input)
         else:
-            logger.error("zero_recommend failed, data_connector_id:%s dataset_id:%s" % (data_connector_id, dataset_id))
+            logger.error("zero_recommend failed, data_source_id:%s dataset_id:%s" % (data_source_id, dataset_id))
 
         logger.debug("zero_recommend suc, recomendation_list cnt:%d" % len(recomendation_list))
         return recomendation_list
 
-    def relevant_recommend_by_data_connector(self, user_id: str, data_connector_id: str, previous_user_input: str) -> List[str]:
-        relevant_data_connector = self.get_relevant_data_connector_from_input(user_id, data_connector_id)
-        provided_data_connectors = ""
-        for data_connector_id in relevant_data_connector:
-            provided_data_connectors += data_connector_id.get_meta_info()
+    def relevant_recommend_by_data_source(self, user_id: str, data_source_id: str, previous_user_input: str) -> List[str]:
+        relevant_data_source = self.get_relevant_data_source_from_input(user_id, data_source_id)
+        provided_data_sources = ""
+        for data_source_id in relevant_data_source:
+            provided_data_sources += data_source_id.get_meta_info()
 
-        recommend_prompt = relevant_prompt_template.format(provided_data_connectors=provided_data_connectors,
+        recommend_prompt = relevant_prompt_template.format(provided_data_sources=provided_data_sources,
                                                            user_profile=self._get_user_profile(user_id),
                                                            previous_user_question=previous_user_input)
         llm_output = self.globals.general_llm_adapter.process(recommend_prompt)
@@ -179,12 +179,12 @@ class Recommender():
         return recomendation_list
 
     def relevant_recommend_by_dataset(self, user_id: str, dataset_id: str, previous_user_input: str) -> List[str]:
-        relevant_data_connector = self.get_relevant_data_connector_from_input(user_id, dataset_id)
-        provided_data_connectors = ""
-        for dataset_id in relevant_data_connector:
-            provided_data_connectors += dataset_id.get_meta_info()
+        relevant_data_source = self.get_relevant_data_source_from_input(user_id, dataset_id)
+        provided_data_sources = ""
+        for dataset_id in relevant_data_source:
+            provided_data_sources += dataset_id.get_meta_info()
 
-        recommend_prompt = relevant_prompt_template.format(provided_data_connectors=provided_data_connectors,
+        recommend_prompt = relevant_prompt_template.format(provided_data_sources=provided_data_sources,
                                                            user_profile=self._get_user_profile(user_id),
                                                            previous_user_question=previous_user_input)
         llm_output = self.globals.general_llm_adapter.process(recommend_prompt)
@@ -194,12 +194,12 @@ class Recommender():
         return recomendation_list
 
     def relevant_recommend_by_data(self, user_id: str, data_id: str, previous_user_input: str) -> List[str]:
-        relevant_data_connector = self.get_relevant_data_connector_from_input(user_id, data_id)
-        provided_data_connectors = ""
-        for data_id in relevant_data_connector:
-            provided_data_connectors += data_id.get_meta_info()
+        relevant_data_source = self.get_relevant_data_source_from_input(user_id, data_id)
+        provided_data_sources = ""
+        for data_id in relevant_data_source:
+            provided_data_sources += data_id.get_meta_info()
 
-        recommend_prompt = relevant_prompt_template.format(provided_data_connectors=provided_data_connectors,
+        recommend_prompt = relevant_prompt_template.format(provided_data_sources=provided_data_sources,
                                                            user_profile=self._get_user_profile(user_id),
                                                            previous_user_question=previous_user_input)
         llm_output = self.globals.general_llm_adapter.process(recommend_prompt)
@@ -208,18 +208,18 @@ class Recommender():
         logger.debug("relevant_recommend suc")
         return recomendation_list
 
-    def get_relevant_data_connector_from_input(self, user_id, data_connector) -> List[DataConnector]:
-        authorized_data_connector_list: List[DataConnector] = []
+    def get_relevant_data_source_from_input(self, user_id, data_source) -> List[DataSource]:
+        authorized_data_source_list: List[DataSource] = []
 
-        if data_connector == "all":
+        if data_source == "all":
             with Session(self.globals.sql_orm.engine) as session:
-                authorized_data_connector_list: List[DataConnector] = session.query(DataConnector).filter(DataConnector.user_id == user_id).all()
+                authorized_data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.user_id == user_id).all()
         else:
             with Session(self.globals.sql_orm.engine) as session:
-                authorized_data_connector_list: List[DataConnector] = session.query(DataConnector).filter(DataConnector.id == data_connector).all()
+                authorized_data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data_source).all()
 
-        for authorized_data_connector in authorized_data_connector_list:
-            authorized_data_connector.generate_meta_info()
+        for authorized_data_source in authorized_data_source_list:
+            authorized_data_source.generate_meta_info()
 
-        return authorized_data_connector_list
+        return authorized_data_source_list
 

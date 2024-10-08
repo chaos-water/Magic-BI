@@ -6,7 +6,7 @@
 # from entity.user import User
 # from magic_bi.data.dataset import Dataset
 from magic_bi.agent.agent_meta import AgentMeta
-from magic_bi.data.data_connector import DataConnector
+from magic_bi.data.data_source import DataSource
 from magic_bi.message.message import Message
 def init_entity():
     pass

@@ -29,7 +29,7 @@ class Message(TIMESCALE_BASE):
     timestamp = Column(BigInteger)
     dataset_id = Column(String)
     file_id = Column(String)
-    data_connector_id = Column(String)
+    data_source_id = Column(String)
     app_id = Column(String)
     message_type = Column(String)
     human_evaluation = Column(String)
@@ -42,7 +42,7 @@ class Message(TIMESCALE_BASE):
         self.assistant_output: str = ""
         self.person_input_hash: str = ""
         self.timestamp: int = int(time.time()*1000)
-        self.data_connector_id: str = ""
+        self.data_source_id: str = ""
         self.dataset_id: str = ""
         self.file_id: str = ""
         self.data_id: str = ""
@@ -63,7 +63,7 @@ class Message(TIMESCALE_BASE):
 
     def is_legal(self) -> bool:
         if self.person_input == "" or (self.agent_id == "" and self.agent_type == "") or (self.dataset_id == "" and \
-                                                                                    self.data_connector_id == "" and \
+                                                                                    self.data_source_id == "" and \
                                                                                     self.data_id == "" and \
                                                                                     self.app_id == ""):
             return False
@@ -87,4 +87,4 @@ def copy_message(dst_message: Message, src_message: Message):
     dst_message.assistant_output = src_message.assistant_output
     dst_message.timestamp = src_message.timestamp
     dst_message.dataset_id = src_message.dataset_id
-    dst_message.data_connector_id = src_message.data_connector_id
+    dst_message.data_source_id = src_message.data_source_id

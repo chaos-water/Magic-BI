@@ -199,8 +199,8 @@ if __name__ == '__main__':
     qdrant_adapter = QdrantAdapter()
     qdrant_adapter.init(qdrant_config)
 
-    data_connector_id = "733ae9ac5ec111ef87829c69b4617d12"
-    collection_id = data_connector_id + "_qa_template"
+    data_source_id = "733ae9ac5ec111ef87829c69b4617d12"
+    collection_id = data_source_id + "_qa_template"
     results = qdrant_adapter.get_points(collection_id)
     ret = qdrant_adapter.delete_point(collection_id, ["15319bf6-5ed2-11ef-bbae-9c69b4617d12"])
     pass

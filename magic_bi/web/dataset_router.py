@@ -44,7 +44,7 @@ def create_dataset_router(prefix: str):
 
     @dataset_router.post("/dataset/get")
     def get_dataset(request: Request, body: dict):
-        user_id = request.headers.get("user_id")
+        user_id = request.headers.get("user_id", "default")
 
         dataset_list = DATASET_MANAGER.get(user_id)
         dataset_count = DATASET_MANAGER.count(user_id)
