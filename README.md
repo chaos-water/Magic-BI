@@ -1,4 +1,5 @@
 # Introduction
+<a href="https://github.com/chaos-water/Magic-BI/blob/main/README_zh.md" style="color: blue; font-size: 18px;">中文README</a><br/>
 Magic-BI is an AI-based fully automated Data Agent product that supports SQL/NoSQL databases, text, images, and business systems. Magic-BI is open-source and can be deployed in a fully private or semi-private environment, which maximizes 
 user privacy protection while lowering the usage threshold for users.
 Currently supported data types include: SQL databases, text, images, and business systems.
