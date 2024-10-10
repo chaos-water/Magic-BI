@@ -8,7 +8,7 @@ from magic_bi.utils.utils import get_http_rsp
 from magic_bi.data.data_manager import DataManager
 from magic_bi.data.data import Data
 
-DATA_MANAGER = DataManager(globals=GLOBALS, language_name=GLOBAL_CONFIG.misc_config.get_language_name())
+DATA_MANAGER = DataManager(globals=GLOBALS, language_name=GLOBAL_CONFIG.language_config.get_language_name())
 
 
 def create_data_router(prefix: str):
@@ -74,7 +74,7 @@ def create_data_router(prefix: str):
             return get_http_rsp(code=-1, msg="failed")
 
     @data_router.post("/data/segment")
-    # @data_router.post("/%s/data/segment" % "dmbi")
+    # @data_router.post("/%s/data/segment" % "magic_bi")
     def segment_doc(file: UploadFile = File()):
         file_bytes = file.file.read()
         file_name = file.filename

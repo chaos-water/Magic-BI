@@ -15,7 +15,7 @@ from magic_bi.data.data_source_knowledge.table_description import TableDescripti
 from magic_bi.data.data_source_knowledge.table_column_description import TableColumnDescription
 from magic_bi.data.data_source_knowledge.domain_knowledge import DomainKnowledge
 
-DATA_CONNECTOR_MANAGER = DataSourceManager(globals=GLOBALS)
+DATA_SOURCE_MANAGER = DataSourceManager(globals=GLOBALS, lanuage_config=GLOBAL_CONFIG.language_config)
 
 
 def create_data_source_router(prefix: str):
@@ -27,22 +27,10 @@ def create_data_source_router(prefix: str):
         data_source_orm.from_dict(body)
         data_source_orm.user_id = user_id
 
-        qa_template_collection_id = get_qa_template_embedding_collection_id(data_source_orm.id)
-        table_description_collection_id = get_table_description_embedding_collection_id(data_source_orm.id)
-        domain_knowledge_collection_id = get_domain_knowledge_embedding_collection_id(data_source_orm.id)
-
-        ret1 = GLOBALS.qdrant_adapter.add_collection(qa_template_collection_id, 768)
-        ret2 = GLOBALS.qdrant_adapter.add_collection(table_description_collection_id, 768)
-        ret3 = GLOBALS.qdrant_adapter.add_collection(domain_knowledge_collection_id, 768)
-
-        if ret1 != 0 or ret2 != 0 or ret3 != 0:
+        code, msg = DATA_SOURCE_MANAGER.add(data_source_orm)
+        if code != 0:
             logger.error("add_data_source suc, input_body:%s" % body)
-            return get_http_rsp(code=-1, msg="failed")
-
-        ret = DATA_CONNECTOR_MANAGER.add(data_source_orm)
-        if ret != 0:
-            logger.error("add_data_source suc, input_body:%s" % body)
-            return get_http_rsp(code=-1, msg="failed")
+            return get_http_rsp(code=code, msg=msg)
 
         logger.debug("add_data_source suc, data_id:%s" % data_source_orm.id)
         return get_http_rsp(data={"id": data_source_orm.id})
@@ -67,7 +55,7 @@ def create_data_source_router(prefix: str):
             logger.error("delete_data_source failed, data_id:%s" % data_source_orm.id)
             return get_http_rsp(code=-1, msg="failed")
 
-        ret = DATA_CONNECTOR_MANAGER.delete(data_source_orm)
+        ret = DATA_SOURCE_MANAGER.delete(data_source_orm)
         if ret != 0:
             logger.error("delete_data_source failed, data_id:%s" % data_source_orm.id)
             return get_http_rsp(code=ret, msg="failed")
@@ -82,8 +70,8 @@ def create_data_source_router(prefix: str):
         page_index = int(body.get("page_index", 1))
         page_size = int(body.get("page_size", 10))
 
-        data_source_list = DATA_CONNECTOR_MANAGER.get(user_id=user_id, page_index=page_index, page_size=page_size)
-        total_count = DATA_CONNECTOR_MANAGER.count(user_id)
+        data_source_list = DATA_SOURCE_MANAGER.get(user_id=user_id, page_index=page_index, page_size=page_size)
+        total_count = DATA_SOURCE_MANAGER.count(user_id)
 
         if data_source_list is None:
             logger.error("get failed")
@@ -124,7 +112,7 @@ def create_data_source_router(prefix: str):
         qa_template = QaTemplate()
         qa_template.from_dict(body)
 
-        ret = DATA_CONNECTOR_MANAGER.add_qa_template(qa_template)
+        ret = DATA_SOURCE_MANAGER.add_qa_template(qa_template)
         if ret == 0:
             logger.debug("add_qa_template suc")
             return get_http_rsp(data={"id": qa_template.data_source_id})
@@ -136,7 +124,7 @@ def create_data_source_router(prefix: str):
     def get_qa_template(body: dict):
         data_source_id = body.get("data_source_id", "")
 
-        qa_template_list = DATA_CONNECTOR_MANAGER.get_qa_template(data_source_id)
+        qa_template_list = DATA_SOURCE_MANAGER.get_qa_template(data_source_id)
 
         logger.debug("get_qa_template suc")
         return get_http_rsp(data=qa_template_list)
@@ -148,7 +136,7 @@ def create_data_source_router(prefix: str):
         qa_template = QaTemplate()
         qa_template.from_dict(body)
 
-        ret = DATA_CONNECTOR_MANAGER.update_qa_template(qa_template)
+        ret = DATA_SOURCE_MANAGER.update_qa_template(qa_template)
         if ret == 0:
             logger.debug("update_qa_template suc")
         else:
@@ -161,7 +149,7 @@ def create_data_source_router(prefix: str):
     def export_qa_template(body: dict):
         data_source_id = body.get("data_source_id", "")
 
-        df = DATA_CONNECTOR_MANAGER.export_qa_template(data_source_id)
+        df = DATA_SOURCE_MANAGER.export_qa_template(data_source_id)
 
         # 使用 BytesIO 将数据保存到内存中
         file_stream = io.BytesIO()
@@ -177,7 +165,7 @@ def create_data_source_router(prefix: str):
         try:
             df = pd.read_csv(file.file)
 
-            DATA_CONNECTOR_MANAGER.import_qa_template(df, data_source_id)
+            DATA_SOURCE_MANAGER.import_qa_template(df, data_source_id)
 
 
             return get_http_rsp()
@@ -189,7 +177,7 @@ def create_data_source_router(prefix: str):
         table_description = TableDescription()
         table_description.from_dict(body)
 
-        ret = DATA_CONNECTOR_MANAGER.add_table_description(table_description)
+        ret = DATA_SOURCE_MANAGER.add_table_description(table_description)
         if ret == 0:
             logger.debug("add_table_description suc")
             return get_http_rsp(data={"id": table_description.id})
@@ -204,7 +192,7 @@ def create_data_source_router(prefix: str):
         data_source_id = body.get("data_source_id", "")
 
         # ret = execute_add_qa_template(body)
-        ret = DATA_CONNECTOR_MANAGER.delete_table_description(data_source_id, id)
+        ret = DATA_SOURCE_MANAGER.delete_table_description(data_source_id, id)
         if ret == 0:
             logger.debug("delete_table_description suc")
             return get_http_rsp()
@@ -216,7 +204,7 @@ def create_data_source_router(prefix: str):
     def get_table_description(body: dict):
         data_source_id = body.get("data_source_id", "")
 
-        table_description_list = DATA_CONNECTOR_MANAGER.get_table_description(data_source_id)
+        table_description_list = DATA_SOURCE_MANAGER.get_table_description(data_source_id)
         logger.debug("add_qa_template suc")
         return get_http_rsp(data=table_description_list)
 
@@ -225,7 +213,7 @@ def create_data_source_router(prefix: str):
         table_column_description = TableColumnDescription()
         table_column_description.from_dict(body)
 
-        ret = DATA_CONNECTOR_MANAGER.add_table_column_description(table_column_description)
+        ret = DATA_SOURCE_MANAGER.add_table_column_description(table_column_description)
         if ret == 0:
             logger.debug("add_table_column_description suc")
             return get_http_rsp(data={"id": table_column_description.id})
@@ -238,7 +226,7 @@ def create_data_source_router(prefix: str):
     def delete_table_column_description(body: dict):
         id = body.get("id", "")
 
-        ret = DATA_CONNECTOR_MANAGER.delete_table_column_description(id)
+        ret = DATA_SOURCE_MANAGER.delete_table_column_description(id)
         if ret == 0:
             logger.debug("delete_table_column_description suc")
             return get_http_rsp()
@@ -250,7 +238,7 @@ def create_data_source_router(prefix: str):
     def get_table_column_description(body: dict):
         data_source_id = body.get("data_source_id", "")
 
-        table_description_list = DATA_CONNECTOR_MANAGER.get_table_column_description(data_source_id)
+        table_description_list = DATA_SOURCE_MANAGER.get_table_column_description(data_source_id)
         logger.debug("get_table_column_description suc")
         return get_http_rsp(data=table_description_list)
 
@@ -259,7 +247,7 @@ def create_data_source_router(prefix: str):
         domain_knowledge = DomainKnowledge()
         domain_knowledge.from_dict(body)
 
-        ret = DATA_CONNECTOR_MANAGER.add_domain_knowledge(domain_knowledge)
+        ret = DATA_SOURCE_MANAGER.add_domain_knowledge(domain_knowledge)
         if ret == 0:
             logger.debug("add_domain_knowledge suc")
             return get_http_rsp(data={"id": domain_knowledge.id})
@@ -272,7 +260,7 @@ def create_data_source_router(prefix: str):
         id = body.get("id", "")
         data_source_id = body.get("data_source_id", "")
 
-        ret = DATA_CONNECTOR_MANAGER.delete_domain_knowledge(data_source_id, id)
+        ret = DATA_SOURCE_MANAGER.delete_domain_knowledge(data_source_id, id)
         if ret == 0:
             logger.debug("delete_domain_knowledge suc")
             return get_http_rsp()
@@ -284,7 +272,7 @@ def create_data_source_router(prefix: str):
     def get_domain_knowledge(body: dict):
         data_source_id = body.get("data_source_id", "")
 
-        domain_knowledge_list = DATA_CONNECTOR_MANAGER.get_domain_knowledge(data_source_id)
+        domain_knowledge_list = DATA_SOURCE_MANAGER.get_domain_knowledge(data_source_id)
 
         logger.debug("get_domain_knowledge suc")
         return get_http_rsp(data=domain_knowledge_list)

@@ -67,3 +67,10 @@ def image_bytes_to_ndarray(image_bytes: bytes) -> np.ndarray:
     # 将PIL Image对象转换为NumPy数组
     image_array = np.array(image)
     return image_array
+
+def format_db_url(db_url: str) -> str:
+    if db_url.startswith("mysql://"):
+        converted_url = db_url.replace('mysql://', 'mysql+pymysql://')
+        return converted_url
+    else:
+        return db_url

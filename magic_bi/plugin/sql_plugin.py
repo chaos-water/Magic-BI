@@ -3,12 +3,13 @@ from sqlalchemy.orm import sessionmaker
 import pandas as pd
 from loguru import logger
 from magic_bi.plugin.base_plugin import BasePlugin
-
+from magic_bi.utils.utils import format_db_url
 class SqlPlugin(BasePlugin):
     def run(self, sql_cmd: str, db_url: str) -> (int, str):
         sql_cmd = self._clean_argument(sql_cmd)
 
         try:
+            db_url = format_db_url(db_url)
             engine = create_engine(db_url)
 
             # 创建会话
@@ -21,6 +22,7 @@ class SqlPlugin(BasePlugin):
 
             logger.debug("sql plugin run suc")
             return (0, df.to_string())
+
         except Exception as e:
             logger.error("sql plugin run failed")
             logger.error("catch exception:%s" % str(e))

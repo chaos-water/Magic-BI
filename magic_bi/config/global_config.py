@@ -1,6 +1,6 @@
 from loguru import logger
 
-from magic_bi.config.misc_config import MiscConfig
+from magic_bi.config.language_config import LanguageConfig
 from magic_bi.config.model_config import ModelConfig
 from magic_bi.config.web_config import WebConfig
 from magic_bi.config.agent_config import AgentConfig
@@ -31,7 +31,7 @@ class GlobalConfig():
         self.neo4j_config: Neo4jConfig = Neo4jConfig()
         self.elasticsearch_config: ElasticsearchConfig = ElasticsearchConfig()
         self.rabbitmq_config: RabbitmqConfig = RabbitmqConfig()
-        self.misc_config: MiscConfig = MiscConfig()
+        self.language_config: LanguageConfig = LanguageConfig()
         self.rabbitmq_config: RabbitmqConfig = RabbitmqConfig()
 
     def parse(self, config_file_path: str="./config/magic_bi_local_old.yml") -> int:
@@ -58,6 +58,7 @@ class GlobalConfig():
             self.neo4j_config.parse(yaml_content.get("neo4j", {}))
             self.elasticsearch_config.parse(yaml_content.get("elasticsearch", {}))
             self.rabbitmq_config.parse(yaml_content.get("rabbitmq", {}))
+            self.language_config.parse(yaml_content.get("language", {}))
 
             logger.debug("parse config suc")
             return 0

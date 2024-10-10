@@ -145,7 +145,7 @@ class AgentManager():
             from magic_bi.agent.finetuned_llm_sql_agent import FinetunedLlmSqlAgent
             from magic_bi.utils.globals import GLOBALS
             sql_agent: FinetunedLlmSqlAgent = FinetunedLlmSqlAgent()
-            sql_agent.init(agent_meta, self.global_config.agent_config, self.globals, io, self.global_config.misc_config.get_language_name())
+            sql_agent.init(agent_meta, self.global_config.agent_config, self.globals, io, self.global_config.language_config.get_language_name())
 
             logger.debug("get_agent suc")
             return sql_agent
@@ -162,7 +162,7 @@ class AgentManager():
             from magic_bi.agent.finetuned_llm_sql_agent import FinetunedLlmSqlAgent
             from magic_bi.utils.globals import GLOBALS
             sql_agent: FinetunedLlmSqlAgent = FinetunedLlmSqlAgent()
-            sql_agent.init(agent_meta, self.global_config.agent_config, GLOBALS, io, self.global_config.misc_config.get_language_name())
+            sql_agent.init(agent_meta, self.global_config.agent_config, GLOBALS, io, self.global_config.language_config.get_language_name())
 
             logger.debug("get_agent suc")
             return sql_agent
@@ -171,7 +171,7 @@ class AgentManager():
             from magic_bi.agent.rag_agent import RagAgent
             from magic_bi.utils.globals import GLOBALS
             rag_agent: RagAgent = RagAgent()
-            rag_agent.init(agent_meta, self.global_config.agent_config, GLOBALS, io, self.global_config.misc_config.get_language_name())
+            rag_agent.init(agent_meta, self.global_config.agent_config, GLOBALS, io, self.global_config.language_config.get_language_name())
 
             logger.debug("get_agent suc")
             return rag_agent

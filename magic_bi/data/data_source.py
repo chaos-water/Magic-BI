@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
 
 from magic_bi.db.sql_orm import BASE
+from magic_bi.utils.utils import format_db_url
 
 
 def get_qa_template_embedding_collection_id(data_source_id: str):
@@ -29,9 +30,9 @@ class DataSourceOrm(BASE):
     __tablename__ = "data_source"
     id = Column(String, nullable=False)
     user_id = Column(String, nullable=False, primary_key=True)
-    name = Column(String, nullable=False, primary_key=True)
+    name = Column(String, nullable=False)
     type = Column(String, nullable=False)
-    url = Column(String, nullable=False)
+    url = Column(String, nullable=False, primary_key=True)
     add_timestamp = Column(BigInteger, nullable=False)
 
     def __init__(self):
@@ -64,7 +65,8 @@ class DataSource():
 
     def init(self, data_source_orm: DataSourceOrm) -> int:
         self.orm = data_source_orm
-        self.engine = create_engine(self.orm.url)
+        data_source_url = format_db_url(self.orm.url)
+        self.engine = create_engine(data_source_url)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 

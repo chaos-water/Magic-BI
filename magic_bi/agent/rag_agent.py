@@ -47,35 +47,6 @@ evaluate_relevant_knowledge_prompt_template = \
 首先分析给定的条件，然后逐步解决问题，不要输出推理中间步骤，直接输出推理结果。"""
 
 
-# select_relevant_knowledge_prompt_template = \
-# """{relevant_knowledge}
-#
-# [User Question]
-#     {user_question}
-#
-# [Instructions]:
-#     1, 在上诉文档片段中，选择你认为用来回答用户问题最贴切的文档片段的文档；
-#     2，按照{"file_name": "$file_name", "reason": "$reason"}格式回答。
-#
-# 首先分析给定的条件，然后逐步解决问题，不要输出推理中间步骤，直接输出推理结果。"""
-
-# select_answer_prompt_template = \
-# """[Answer 1]:
-# {answer1}
-#
-# [Answer 2]:
-# {answer2}
-#
-# [User Question]
-#     {user_question}
-#
-# [Instructions]:
-#     1, 在上诉答案中，选择你认为最贴切的答案；
-#     2，按照{"answer_index": "$answer_index", "reason": "$reason"}格式回答，answer_index是答案的序号，如1、2、3。。。；
-#     3、如果你认为没有任何一个文档的片段可以回答用户问题，则file_name为空""。
-#
-# 首先分析给定的条件，然后逐步解决问题，不要输出推理中间步骤，直接输出推理结果。"""
-
 merge_answer_prompt_template = \
 """[Answer 1]:
 {answer1}
@@ -134,15 +105,6 @@ class RagAgent(BaseAgent):
 
         return file_list
 
-    # def select_file_name_of_relevant_knowledge(self, relevant_knowledge: str, user_question: str) -> str:
-    #     select_relevant_knowledge_prompt = select_relevant_knowledge_prompt_template.replace("{relevant_knowledge}", relevant_knowledge).replace("{user_question}", user_question)
-    #
-    #     llm_output = self.globals.general_llm_adapter.process(select_relevant_knowledge_prompt)
-    #     llm_outpu_json = json.loads(llm_output)
-    #
-    #     file_name = llm_outpu_json.get("file_name")
-    #     return file_name
-
 
     def process(self, message: Message):
         extract_keyword_prompt = extract_keyword_prompt_template.replace("{user_question}", message.person_input).\
@@ -194,10 +156,6 @@ class RagAgent(BaseAgent):
             relevant_chunk_content_str, output_file_2_chunk_content_dict = self.get_relevant_knowledge_by_elasticsearch(
                 message.dataset_id, message.person_input)
 
-        # file_name = self.select_file_name_of_relevant_knowledge(relevant_chunk_content_str, message.person_input)
-        # if file_name == "" or file_name not in output_file_2_chunk_content_dict:
-        #     return self.polite_refuse, {}
-
         rag_prompt = rag_prompt_template.replace("{relevant_knowledge}", relevant_chunk_content_str).replace("{user_question}", message.person_input)
         rag_llm_output = self.globals.general_llm_adapter.process(rag_prompt)
 
@@ -210,19 +168,6 @@ class RagAgent(BaseAgent):
         else:
             relevant_chunk_content_str, output_file_2_chunk_content_dict = self.get_relevant_knowledge_by_qdrant(
                 message.dataset_id, message.person_input, message.file_id)
-
-        # found_file_name = self.select_file_name_of_relevant_knowledge(relevant_chunk_content_str, message.person_input)
-        # if found_file_name == "":
-        #     return self.polite_refuse, {}
-
-        # real_found = False
-        # for real_file_name, chunk_list in output_file_2_chunk_content_dict.items():
-        #     if found_file_name in real_file_name:
-        #         real_found = True
-        #         found_file_name = real_file_name
-        #
-        # if real_found is False:
-        #     return self.polite_refuse, {}
 
         rag_prompt = rag_prompt_template.replace("{relevant_knowledge}", relevant_chunk_content_str).replace(
             "{user_question}", message.person_input)

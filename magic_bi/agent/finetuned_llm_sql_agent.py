@@ -5,6 +5,7 @@ from loguru import logger
 from typing import List
 
 from magic_bi.config.agent_config import AgentConfig
+from magic_bi.config.language_config import LanguageConfig
 from magic_bi.agent.base_agent import BaseAgent
 from magic_bi.message.message import Message
 from magic_bi.utils.globals import Globals
@@ -13,7 +14,7 @@ from magic_bi.data.data_source import DataSource, DataSourceOrm
 from magic_bi.agent.agent_meta import AgentMeta
 from magic_bi.agent.utils import get_env_info
 from magic_bi.plugin.sql_plugin import SqlPlugin
-
+from magic_bi.utils.error import ERROR_CODE, get_error_message
 
 def decode_llm_output_in_json_list_format(input_text: str) -> list:
     import re
@@ -96,9 +97,9 @@ class FinetunedLlmSqlAgent(BaseAgent):
         # self.memmory: Memmory = Memmory()
         super().__init__()
 
-    def init(self, agent_meta: AgentMeta, agent_config: AgentConfig, globals: Globals, io: BaseIo, language_name: str) -> int:
+    def init(self, agent_meta: AgentMeta, agent_config: AgentConfig, globals: Globals, io: BaseIo, language_config: LanguageConfig) -> int:
         self.agent_config = agent_config
-        super().init(agent_meta, agent_config, globals, io, language_name)
+        super().init(agent_meta, agent_config, globals, io, language_config)
 
         logger.debug("init suc")
         return 0
@@ -126,7 +127,7 @@ class FinetunedLlmSqlAgent(BaseAgent):
         if sql_cmd == "":
             if data_source is None:
                 logger.error("process failed, relevant_data_source_list cnt is 0")
-                return "", "", ""
+                return ERROR_CODE.DATA_SOURCE_NOT_EXISTED.value, get_error_message(ERROR_CODE.DATA_SOURCE_NOT_EXISTED), "", "", ""
 
             full_table_list = data_source.get_table_list()
             table_descriptions = data_source.get_table_column_batch(full_table_list, is_mini=True)
@@ -142,23 +143,22 @@ class FinetunedLlmSqlAgent(BaseAgent):
                                                                 replace("{user_question}", message.person_input)
             sql_cmd = self.globals.text2sql_llm_adapter.process(generate_sql_prompt)
 
+        sql_output = ""
+        human_readable_output = ""
+        if message.with_sql_result is True:
+            sql_plugin = SqlPlugin()
+            (ret, sql_output) = sql_plugin.run(sql_cmd, data_source.orm.url)
 
-        sql_plugin = SqlPlugin()
-        (ret, sql_output) = sql_plugin.run(sql_cmd, data_source.orm.url)
-
-        if message.with_humman_readable_output is True and sql_output.strip() != "":
-            prompt_answer_user = build_prompt_make_sql_output_human_readable(message.person_input, sql_output)
-            human_readable_output = self.globals.general_llm_adapter.process(prompt_answer_user)
-        else:
-            human_readable_output = ""
+            if message.with_humman_readable_output is True and sql_output.strip() != "":
+                prompt_answer_user = build_prompt_make_sql_output_human_readable(message.person_input, sql_output)
+                human_readable_output = self.globals.general_llm_adapter.process(prompt_answer_user)
 
         message.assistant_output = sql_cmd
         if self.agent_config.memmory_enabled:
             self.memmory.add_message(message)
 
         logger.debug("process suc")
-        return sql_output, human_readable_output, sql_cmd
-        # return sql_output, human_readable_output, sql_cmd, relevant_table_list
+        return ERROR_CODE.SUC.value, get_error_message(ERROR_CODE.SUC), sql_output, human_readable_output, sql_cmd
 
     def get_data_source(self, user_id: str, data_source_id: str) -> DataSource:
         with Session(self.globals.sql_orm.engine) as session:

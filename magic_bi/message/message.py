@@ -51,6 +51,7 @@ class Message(TIMESCALE_BASE):
         self.human_evaluation: str = ""
         self.with_humman_readable_output: bool = False
         self.with_sql_cmd: bool = True
+        self.with_sql_result: bool = True
         self.with_few_shot: bool = True
 
     def from_dict(self, input_dict: Dict):

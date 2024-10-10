@@ -11,32 +11,46 @@ from magic_bi.data.data_source_knowledge.table_description import TableDescripti
 from magic_bi.data.data_source_knowledge.table_column_description import TableColumnDescription
 from magic_bi.data.data_source_knowledge.domain_knowledge import DomainKnowledge
 from magic_bi.data.data_source import get_qa_template_embedding_collection_id, get_domain_knowledge_embedding_collection_id, get_table_description_embedding_collection_id
-
+from magic_bi.utils.error import ERROR_CODE, get_error_message
+from magic_bi.config.language_config import LanguageConfig
 
 class DataSourceManager():
-    def __init__(self, globals: Globals):
+    def __init__(self, globals: Globals, lanuage_config: LanguageConfig):
         self.globals: Globals = globals
+        self.language_config: LanguageConfig = lanuage_config
 
-    def add(self, data_source_orm: DataSourceOrm) -> int:
+    def add(self, data_source_orm: DataSourceOrm) -> (int, str):
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
             count = session.query(DataSourceOrm).filter(DataSourceOrm.user_id == data_source_orm.user_id,
                                                         DataSourceOrm.url == data_source_orm.url).count()
             if count > 0:
-                logger.error("add data connector, the same data %s already exists" % data_source_orm.name)
-                return -1
+                logger.error("add data source, the same data %s already exists" % data_source_orm.name)
+                return ERROR_CODE.DUPLICATE_ADD.value, get_error_message(ERROR_CODE.DUPLICATE_ADD)
+
+        qa_template_collection_id = get_qa_template_embedding_collection_id(data_source_orm.id)
+        table_description_collection_id = get_table_description_embedding_collection_id(data_source_orm.id)
+        domain_knowledge_collection_id = get_domain_knowledge_embedding_collection_id(data_source_orm.id)
+
+        ret1 = self.globals.qdrant_adapter.add_collection(qa_template_collection_id, 768)
+        ret2 = self.globals.qdrant_adapter.add_collection(table_description_collection_id, 768)
+        ret3 = self.globals.qdrant_adapter.add_collection(domain_knowledge_collection_id, 768)
+
+        if ret1 != 0 or ret2 != 0 or ret3 != 0:
+            logger.error("add data source failed, update qdrant failed")
+            return ERROR_CODE.UNKNOWN_ERROR.value, get_error_message(ERROR_CODE.UNKNOWN_ERROR)
 
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
             ret = session.query(DataSourceOrm).filter(DataSourceOrm.user_id == data_source_orm.user_id, \
-                                                      DataSourceOrm.name == data_source_orm.name).count()
+                                                      DataSourceOrm.url == data_source_orm.url).count()
             if ret > 0:
-                logger.error("add data connector failed, the same connector has already been added")
-                return -1
+                logger.error("add data source failed, the same connector has already been added")
+                return ERROR_CODE.DUPLICATE_ADD.value, get_error_message(ERROR_CODE.DUPLICATE_ADD)
 
             session.add(data_source_orm)
             session.commit()
 
         logger.debug("add dataset suc")
-        return 0
+        return ERROR_CODE.SUC.value, get_error_message(ERROR_CODE.SUC)
 
     def delete(self, data_source_orm: DataSourceOrm) -> int:
         with Session(self.globals.sql_orm.engine) as session:
@@ -44,7 +58,7 @@ class DataSourceManager():
             session.commit()
 
         logger.debug("delete data_source suc")
-        return 0
+        return ERROR_CODE.SUC.value
 
     def get(self, user_id: str = "", id: str = "", page_index: int = 1, page_size: int = 10) -> List[DataSourceOrm]:
         if page_index < 1:

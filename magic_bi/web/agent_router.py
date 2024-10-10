@@ -96,27 +96,15 @@ def create_agent_router(prefix: str):
             return get_http_rsp(data=ret_data)
 
         elif message.agent_type == AGENT_TYPE.SQL_BY_FINETUNE_LLM.value:
-            if GLOBAL_CONFIG.agent_config.try_decompose_user_question:
-                sub_questions, merge_strategy = try_divide_user_question(message.person_input, GLOBALS.general_llm_adapter)
+            code, msg, sql_output, human_readable_output, sql_cmd = agent.process(message)
+
+            if code == 0:
+                logger.debug("agent_process suc")
+                ret_data = {"sql_output": sql_output, "human_readable_output": human_readable_output, "sql_cmd": sql_cmd}
+                return get_http_rsp(data=ret_data)
             else:
-                sub_questions = []
-                merge_strategy = ""
-
-            if len(sub_questions) == 0 or len(merge_strategy) == 0:
-                sql_output, human_readable_output, sql_cmd = agent.process(message)
-            else:
-                original_user_question = message.person_input
-                sub_question_2_sql_output_dict = {}
-                for sub_question in sub_questions:
-                    message.person_input = sub_question
-                    sql_output, human_readable_output, sql_cmd = agent.process(message)
-                    sub_question_2_sql_output_dict[sub_question] = sql_output
-
-                merge_sub_question_answer(original_user_question, sub_question_2_sql_output_dict, GLOBALS.general_llm_adapter)
-
-            logger.debug("agent_process suc")
-            ret_data = {"sql_output": sql_output, "human_readable_output": human_readable_output, "sql_cmd": sql_cmd}
-            return get_http_rsp(data=ret_data)
+                logger.error("agent_process failed")
+                return get_http_rsp(code=code, msg=msg)
 
         elif message.agent_type == AGENT_TYPE.RAG.value:
             answer, relevant_content_chunks = agent.process(message)
