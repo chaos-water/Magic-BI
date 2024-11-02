@@ -2,7 +2,7 @@ import os.path
 
 from loguru import logger
 from docx import Document
-from typing import List
+
 import io
 
 from magic_bi.model.text_embedding import TextEmbedding
@@ -110,7 +110,7 @@ def get_content_from_docx(file_bytes: bytes) -> str:
     content = clean_text(content)
     return content
 
-def decode_docx_with_heading(file_bytes: bytes, max_chunk_size: int, text_embedding: TextEmbedding, openai_adapter: OpenaiAdapter) -> List:
+def decode_docx_with_heading(file_bytes: bytes, max_chunk_size: int, text_embedding: TextEmbedding, openai_adapter: OpenaiAdapter) -> list:
     doc = Document(io.BytesIO(file_bytes))
 
     # 定义标题样式与级别的映射

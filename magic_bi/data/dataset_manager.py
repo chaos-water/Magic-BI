@@ -1,4 +1,4 @@
-from typing import List
+
 from loguru import logger
 from sqlalchemy.orm import Session
 
@@ -75,9 +75,9 @@ class DatasetManager():
         logger.debug("delete dataset suc")
         return 0
 
-    def get(self, user_id: str) -> List[Dataset]:
+    def get(self, user_id: str) -> list[Dataset]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            dataset_list: List[Dataset] = session.query(Dataset).filter(Dataset.user_id == user_id).all()
+            dataset_list: list[Dataset] = session.query(Dataset).filter(Dataset.user_id == user_id).all()
 
         logger.debug("get dataset suc, dataset_cnt:%d" % len(dataset_list))
         return dataset_list

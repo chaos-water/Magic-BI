@@ -2,7 +2,7 @@ import time
 
 import uuid
 from enum import Enum
-from typing import Dict
+
 from sqlalchemy import Column, String, BigInteger, Integer, Text
 
 from magic_bi.db.sql_orm import BASE
@@ -27,12 +27,12 @@ class DataSourceSchema(BASE):
         self.file_bytes: bytes = None
         self.dataset_id: str = ""
 
-    def from_dict(self, data_dict: Dict):
+    def from_dict(self, data_dict: dict):
         for key, value in data_dict.items():
             if key in self.__dict__ and value is not None:
                 self.__dict__[key] = value
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         output_dict = {}
         output_dict["id"] = self.id
         output_dict["dataset_id"] = self.dataset_id

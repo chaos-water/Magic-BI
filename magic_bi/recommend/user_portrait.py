@@ -1,5 +1,5 @@
 import json
-from typing import List
+
 from loguru import logger
 from sqlalchemy.orm.session import Session
 from sqlalchemy import desc
@@ -27,14 +27,14 @@ class UserPortrait:
         return 0
 
     def get_user_portrait(self, user_id: str) -> list:
-        user_portrait: List = []
+        user_portrait: list = []
         user_input_list_str: str = ""
 
         from magic_bi.message.message import Message
         import datetime
 
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            message_list: List[Message] = session.query(Message).filter(Message.user_id == user_id).order_by(desc(Message.timestamp)).limit(10).all()
+            message_list: list[Message] = session.query(Message).filter(Message.user_id == user_id).order_by(desc(Message.timestamp)).limit(10).all()
             for message in message_list:
                 user_input = "%s %s\n" % (datetime.datetime.fromtimestamp(message.timestamp).strftime("%Y-%m-%d %H:%M:%S"), message.person_input)
                 user_input_list_str += user_input

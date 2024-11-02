@@ -2,13 +2,13 @@ from loguru import logger
 from fastapi import APIRouter, Request
 from fastapi import File, UploadFile, Form
 
-from typing import Dict
+
 from magic_bi.utils.globals import GLOBALS, GLOBAL_CONFIG
 from magic_bi.utils.utils import get_http_rsp
 from magic_bi.data.data_manager import DataManager
 from magic_bi.data.data import Data
 
-DATA_MANAGER = DataManager(globals=GLOBALS, language_name=GLOBAL_CONFIG.language_config.get_language_name())
+DATA_MANAGER = DataManager(globals=GLOBALS, language_name=GLOBAL_CONFIG.system_config.get_language_name())
 
 
 def create_data_router(prefix: str):
@@ -30,7 +30,7 @@ def create_data_router(prefix: str):
             return get_http_rsp(code=-1, msg="failed")
 
     @data_router.post("/data/delete")
-    def delete_data(body: Dict):
+    def delete_data(body: dict):
         data: Data = Data()
         data.from_dict(body)
 
@@ -43,7 +43,7 @@ def create_data_router(prefix: str):
             return get_http_rsp(code=ret, msg="failed")
 
     @data_router.post("/data/get")
-    def get_data(request: Request, body: Dict):
+    def get_data(request: Request, body: dict):
         user_id = request.headers.get("user_id", "default")
         
         dataset_id = body.get("dataset_id")
@@ -60,8 +60,24 @@ def create_data_router(prefix: str):
             logger.error("get failed")
             return get_http_rsp(code=-1, msg="failed")
 
+    @data_router.post("/data/get_chunk")
+    def get_chunks(request: Request, body: dict):
+        dataset_id = body.get("dataset_id")
+        file_id = body.get("file_id")
+        page_index = int(body.get("page_index"))
+        page_size = int(body.get("page_size"))
+
+        chunk_list, total_count = DATA_MANAGER.get_chunks(dataset_id, file_id, page_index, page_size)
+
+        if chunk_list is not None:
+            logger.debug("get suc")
+            return get_http_rsp(data={"data_list": [chunk.to_dict() for chunk in chunk_list], "total_count": total_count})
+        else:
+            logger.error("get failed")
+            return get_http_rsp(code=-1, msg="failed")
+
     @data_router.post("/data/download")
-    def download_data(body: Dict):
+    def download_data(body: dict):
 
         data_id = body.get("id")
         data_list = DATA_MANAGER.get(data_id)

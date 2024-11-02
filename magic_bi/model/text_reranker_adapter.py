@@ -1,6 +1,4 @@
 from loguru import logger
-from typing import List
-# from FlagEmbedding import FlagLLMReranker
 from FlagEmbedding import FlagReranker
 
 class TextRerankeAdapter(object):
@@ -14,7 +12,7 @@ class TextRerankeAdapter(object):
         return 0
 
     # 这段代码做个改写，scores是个分数的数组，用来标识compare_input_list中匹配的程度。请根据score的多少，输出input_text_list中的文本，并配上对应的分数。
-    def process(self, input_text: str, input_text_list: List[str]) -> List:
+    def process(self, input_text: str, input_text_list: list[str]) -> list:
         compare_input_list = [[input_text, input_text2] for input_text2 in input_text_list]
 
         scores = self.reranker.compute_score(compare_input_list, normalize=True)

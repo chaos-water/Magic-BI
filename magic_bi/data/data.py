@@ -3,8 +3,8 @@ import time
 
 import uuid
 from enum import Enum
-from typing import Dict
-from sqlalchemy import Column, String, BigInteger, Integer
+
+from sqlalchemy import Column, String, BigInteger, Integer, TEXT
 
 from magic_bi.db.sql_orm import BASE
 from fastapi import UploadFile
@@ -46,12 +46,12 @@ class Data(BASE):
         self.file_bytes: bytes = None
         self.dataset_id: str = ""
 
-    def from_dict(self, data_dict: Dict):
+    def from_dict(self, data_dict: dict):
         for key, value in data_dict.items():
             if key in self.__dict__ and value is not None:
                 self.__dict__[key] = value
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         output_dict = {}
         output_dict["id"] = self.id
         output_dict["dataset_id"] = self.dataset_id
@@ -75,3 +75,44 @@ class Data(BASE):
     def get_content(self):
         pass
 
+
+class DataChunk(BASE):
+    __tablename__ = "data_chunk"
+    user_id = Column(String, nullable=False)
+    dataset_id = Column(String, nullable=False, primary_key=True)
+    file_id = Column(String, nullable=False, primary_key=True)
+    chunk_index = Column(Integer, primary_key=True)
+    chunk_content = Column(TEXT)
+
+
+    # def __init__(self):
+    #     self.id = uuid.uuid1().hex
+    #     self.add_timestamp = int(time.time() * 1000)
+    #     self.file_bytes: bytes = None
+    #     self.dataset_id: str = ""
+    #
+    # def from_dict(self, data_dict: dict):
+    #     for key, value in data_dict.items():
+    #         if key in self.__dict__ and value is not None:
+    #             self.__dict__[key] = value
+    #
+    def to_dict(self) -> dict:
+        output_dict = {}
+        output_dict["user_id"] = self.user_id
+        output_dict["dataset_id"] = self.dataset_id
+        output_dict["file_id"] = self.file_id
+        output_dict["chunk_index"] = self.chunk_index
+        output_dict["chunk_content"] = self.chunk_content
+
+        return output_dict
+    #
+    # def from_upload_file(self, upload_file: UploadFile):
+    #     self.file_bytes = upload_file.file.read()
+    #     self.type = DATA_TYPE.DOC.value
+    #     self.size = upload_file.size
+    #     self.name = upload_file.filename
+    #     self.hash = get_bytes_hash(self.file_bytes)
+    #
+    #
+    # def get_content(self):
+    #     pass

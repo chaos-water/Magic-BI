@@ -1,4 +1,4 @@
-from typing import List
+
 from loguru import logger
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -12,20 +12,27 @@ from magic_bi.data.data_source_knowledge.table_column_description import TableCo
 from magic_bi.data.data_source_knowledge.domain_knowledge import DomainKnowledge
 from magic_bi.data.data_source import get_qa_template_embedding_collection_id, get_domain_knowledge_embedding_collection_id, get_table_description_embedding_collection_id
 from magic_bi.utils.error import ERROR_CODE, get_error_message
-from magic_bi.config.language_config import LanguageConfig
+from magic_bi.config.system_config import SystemConfig
 
 class DataSourceManager():
-    def __init__(self, globals: Globals, lanuage_config: LanguageConfig):
+    def __init__(self, globals: Globals, lanuage_config: SystemConfig):
         self.globals: Globals = globals
-        self.language_config: LanguageConfig = lanuage_config
+        self.system_config: SystemConfig = lanuage_config
 
     def add(self, data_source_orm: DataSourceOrm) -> (int, str):
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
             count = session.query(DataSourceOrm).filter(DataSourceOrm.user_id == data_source_orm.user_id,
                                                         DataSourceOrm.url == data_source_orm.url).count()
             if count > 0:
-                logger.error("add data source, the same data %s already exists" % data_source_orm.name)
+                logger.error("add data source failed, the same data %s already exists" % data_source_orm.name)
                 return ERROR_CODE.DUPLICATE_ADD.value, get_error_message(ERROR_CODE.DUPLICATE_ADD)
+
+        from magic_bi.data.data_source import DataSource
+        data_source: DataSource = DataSource()
+        ret = data_source.init(data_source_orm)
+        if ret < 0:
+            logger.error("add data source failed, the data_source %s can not be connected." % data_source_orm.url)
+            return ERROR_CODE.DATA_SOURCE_CONNECT_FAILED, get_error_message(ERROR_CODE.DATA_SOURCE_CONNECT_FAILED)
 
         qa_template_collection_id = get_qa_template_embedding_collection_id(data_source_orm.id)
         table_description_collection_id = get_table_description_embedding_collection_id(data_source_orm.id)
@@ -39,17 +46,17 @@ class DataSourceManager():
             logger.error("add data source failed, update qdrant failed")
             return ERROR_CODE.UNKNOWN_ERROR.value, get_error_message(ERROR_CODE.UNKNOWN_ERROR)
 
-        with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            ret = session.query(DataSourceOrm).filter(DataSourceOrm.user_id == data_source_orm.user_id, \
-                                                      DataSourceOrm.url == data_source_orm.url).count()
-            if ret > 0:
-                logger.error("add data source failed, the same connector has already been added")
-                return ERROR_CODE.DUPLICATE_ADD.value, get_error_message(ERROR_CODE.DUPLICATE_ADD)
+        # with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
+        #     ret = session.query(DataSourceOrm).filter(DataSourceOrm.user_id == data_source_orm.user_id, \
+        #                                               DataSourceOrm.url == data_source_orm.url).count()
+        #     if ret > 0:
+        #         logger.error("add data source failed, the same connector has already been added")
+        #         return ERROR_CODE.DUPLICATE_ADD.value, get_error_message(ERROR_CODE.DUPLICATE_ADD)
 
-            session.add(data_source_orm)
-            session.commit()
+        session.add(data_source_orm)
+        session.commit()
 
-        logger.debug("add dataset suc")
+        logger.debug("add data_source suc")
         return ERROR_CODE.SUC.value, get_error_message(ERROR_CODE.SUC)
 
     def delete(self, data_source_orm: DataSourceOrm) -> int:
@@ -60,12 +67,12 @@ class DataSourceManager():
         logger.debug("delete data_source suc")
         return ERROR_CODE.SUC.value
 
-    def get(self, user_id: str = "", id: str = "", page_index: int = 1, page_size: int = 10) -> List[DataSourceOrm]:
+    def get(self, user_id: str = "", id: str = "", page_index: int = 1, page_size: int = 10) -> list[DataSourceOrm]:
         if page_index < 1:
             page_index = 1
         offset = (page_index - 1) * page_size
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            data_source_list: List[DataSourceOrm] = []
+            data_source_list: list[DataSourceOrm] = []
             if user_id != "":
                 data_source_list = session.query(DataSourceOrm).filter(DataSourceOrm.user_id == user_id).\
                     offset(offset).limit(page_size).all()
@@ -123,10 +130,10 @@ class DataSourceManager():
         logger.debug("update_qa_template suc")
         return 0
 
-    def get_qa_template(self, data_source_id: str) -> List[QaTemplate]:
+    def get_qa_template(self, data_source_id: str) -> list[QaTemplate]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            from typing import List
-            qa_template_list: List[QaTemplate] = session.query(QaTemplate).filter(
+            
+            qa_template_list: list[QaTemplate] = session.query(QaTemplate).filter(
                 QaTemplate.data_source_id == data_source_id).all()
 
         logger.debug("get_qa_template suc, qa_template_list_cnt:%d" % len(qa_template_list))
@@ -201,7 +208,7 @@ class DataSourceManager():
             logger.error("delete_table_description failed")
             return -1
 
-    def get_table_description(self, data_source_id: str) -> List[TableDescription]:
+    def get_table_description(self, data_source_id: str) -> list[TableDescription]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
             table_description_list = session.query(TableDescription).filter(TableDescription.data_source_id == data_source_id).all()
 
@@ -224,7 +231,7 @@ class DataSourceManager():
         logger.debug("delete_table_column_description suc")
         return 0
 
-    def get_table_column_description(self, data_source_id: str, table_name: str) -> List[TableColumnDescription]:
+    def get_table_column_description(self, data_source_id: str, table_name: str) -> list[TableColumnDescription]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
             table_column_description_list = session.query(TableColumnDescription).\
                 filter(TableColumnDescription.data_source_id == data_source_id, table_name == table_name).all()
@@ -273,7 +280,7 @@ class DataSourceManager():
         return 0
 
 
-    def get_domain_knowledge(self, data_source_id: str) -> List[DomainKnowledge]:
+    def get_domain_knowledge(self, data_source_id: str) -> list[DomainKnowledge]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
             domain_knowledge_list = session.query(DomainKnowledge).filter(DomainKnowledge.data_source_id == data_source_id).all()
 

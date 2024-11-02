@@ -1,4 +1,4 @@
-from typing import List
+
 import json
 
 from magic_bi.agent.memmory import Memmory
@@ -11,10 +11,6 @@ from magic_bi.io.base_io import BaseIo
 from magic_bi.agent.agent_meta import AgentMeta
 from magic_bi.config.agent_config import AgentConfig
 
-"""
-    1、提供了2篇或1篇文档的片段，但是只有一篇的文档片段能回答用户问题，先判断哪篇文档的片段可以回答用户问题；
-    2、基于步骤1中选择的文档片段，言简意赅的回答用户问题，不需要任何多余的信息，如建议和语气词等；
-"""
 
 rag_prompt_template = \
 """{relevant_knowledge}
@@ -29,20 +25,6 @@ rag_prompt_template = \
     4、不要超出选择的文档片段范围回答用户问题，如果选择的文档片段无法回答用户问题，则礼貌拒绝回答并说明原因，而不是自己捏造答案；
     5、尽可能直接引用原文回答问题，而不是自己基于原文做改写和总结；
     6、输出纯文本格式，不需要markdown格式。
-
-首先分析给定的条件，然后逐步解决问题，不要输出推理中间步骤，直接输出推理结果。"""
-
-
-
-evaluate_relevant_knowledge_prompt_template = \
-"""{relevant_knowledge}
-
-[User Question]
-    {user_question}
-
-[Instructions]:
-    1, 评估上诉上下文，是否能回答用户问题；
-    2，按照{"answerable": "$answerable", "reason": "$reason"}格式回答，answerable取值yes或no。
 
 首先分析给定的条件，然后逐步解决问题，不要输出推理中间步骤，直接输出推理结果。"""
 
@@ -76,7 +58,7 @@ First, analyze the given conditions, then solve the problem step by step. Do not
 """
 
 
-class RagAgent(BaseAgent):
+class RagAgentV2(BaseAgent):
     def __init__(self):
         self.memmory: Memmory = Memmory()
         self.polite_refuse = "对不起，知识库中没有检索到相关知识，请换个其它问题。"
@@ -89,7 +71,7 @@ class RagAgent(BaseAgent):
         return 0
 
 
-    def get_relevant_file_list(self, user_input_embedding: List, dataset_id: str) ->List[str]:
+    def get_relevant_file_list(self, user_input_embedding: list, dataset_id: str) ->list[str]:
         summary_search_results = self.globals.qdrant_adapter.search(dataset_id + "_summary", user_input_embedding, cnt=2)
         if len(summary_search_results) == 0:
             return []

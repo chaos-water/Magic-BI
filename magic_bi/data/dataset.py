@@ -1,6 +1,5 @@
 import time
 import uuid
-from typing import Dict, List
 from sqlalchemy import Column, String, BigInteger, Integer
 
 from magic_bi.db.sql_orm import BASE
@@ -24,12 +23,12 @@ class Dataset(BASE):
         self.name = ""
         self.add_timestamp = int(time.time() * 1000)
 
-    def from_dict(self, data_dict: Dict):
+    def from_dict(self, data_dict: dict):
         for key, value in data_dict.items():
             if key in self.__dict__ and value is not None:
                 self.__dict__[key] = value
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         output_dict = {}
         output_dict["id"] = self.id
         output_dict["user_id"] = self.user_id

@@ -16,7 +16,8 @@ def callback(channel, method, properties, body):
     # 手动标记消息已接收并处理完毕，RabbitMQ可以从queue中移除该条消息
     channel.basic_ack(delivery_tag=method.delivery_tag)
 
-
+# 这段代码有个问题，callback函数中，通过lorugu输出的log，头部信息是： pika.adapters.blocking_connection:_dispatch_events:1510。
+# 而不是log所在的文件、函数和代码行数，请解决。
 class RabbitmqConsumer(object):
     def __init__(self, max_retries=None):
         self.max_retries = max_retries

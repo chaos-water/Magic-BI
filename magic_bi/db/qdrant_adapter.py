@@ -1,12 +1,10 @@
 import uuid
 from loguru import logger
-from typing import Dict
 from qdrant_client.http.models import PointStruct
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import Distance, VectorParams
 
 from magic_bi.config.qdrant_config import QdrantConfig
-# from qdrant_client.http.model.md import Filter, FieldCondition, MatchValue
 
 class QdrantPoint():
     def __init__(self):
@@ -149,31 +147,36 @@ class QdrantAdapter():
             logger.error("catch exception:%s" % str(e))
             return 0
 
-    def get_points(self, collection_id: str, key_2_value_dict: dict={}) -> list:
+    def get_points(self, collection_id: str, key_2_value_dict: dict = {}, page_index: int = 1, page_size = 10) -> list:
+        offset = (page_index - 1) * page_size
         try:
             must_filter_list = []
 
             for key, value in key_2_value_dict.items():
                 must_filter_list.append(models.FieldCondition(
-                                                            key=key,
-                                                            match=models.MatchValue(value=value),
-                                        ))
+                    key=key,
+                    match=models.MatchValue(value=value),
+                ))
 
-            results = self.client.scroll(
+            # 使用 scroll 来分页获取结果
+            results, next_page = self.client.scroll(
                 collection_name=collection_id,
                 scroll_filter=models.Filter(
                     must=must_filter_list
                 ),
+                limit=page_size,  # 添加 limit 参数
+                offset=offset  # 添加 offset 参数
             )
 
-            logger.debug("get_points suc")
+            logger.debug("get_points suc, page_index:%d, page_size:%d" % (page_index, page_size))
             return results
         except Exception as e:
             logger.error("get_points failed, collection_id:%s, key_2_value_dict:%s" % (collection_id, key_2_value_dict))
             logger.error("catch exception:%s" % str(e))
             return []
 
-    def delete_point(self, collection_id: str, filter_dict: Dict) -> int:
+
+    def delete_point(self, collection_id: str, filter_dict: dict) -> int:
         must = []
         for key, value in filter_dict.items():
             must.append(models.FieldCondition(

@@ -4,7 +4,7 @@ from loguru import logger
 from fastapi import APIRouter, Request
 from fastapi import File, Form
 
-from typing import Dict
+
 
 from magic_bi.app.app_api import AppApi
 from magic_bi.utils.globals import GLOBALS
@@ -19,7 +19,7 @@ def create_app_router(prefix: str):
     app_router = APIRouter(prefix=prefix)
 
     @app_router.post("/app/add")
-    def add_app(body: Dict):
+    def add_app(body: dict):
         app: App = App()
         app.from_dict(body)
 
@@ -32,7 +32,7 @@ def create_app_router(prefix: str):
             return get_http_rsp(code=-1, msg="failed")
 
     @app_router.post("/app/delete")
-    def delete_app(body: Dict):
+    def delete_app(body: dict):
         app_id = body.get("id")
 
         ret = APP_MANAGER.delete_app(app_id)
@@ -44,7 +44,7 @@ def create_app_router(prefix: str):
             return get_http_rsp(code=ret, msg="failed")
 
     @app_router.post("/app/get")
-    def get_app(request: Request, body: Dict):
+    def get_app(request: Request, body: dict):
         user_id = request.headers.get("user_id", "default")
         
         app_list = APP_MANAGER.get_app(user_id)
@@ -57,7 +57,7 @@ def create_app_router(prefix: str):
             return get_http_rsp(code=-1, msg="failed")
 
     @app_router.post("/app/api/add")
-    def add_app_api(body: Dict):
+    def add_app_api(body: dict):
         app_api: AppApi = AppApi()
         app_api.from_dict(body)
 
@@ -70,7 +70,7 @@ def create_app_router(prefix: str):
             return get_http_rsp(code=-1, msg="failed")
 
     @app_router.post("/app/api/delete")
-    def delete_app_api(body: Dict):
+    def delete_app_api(body: dict):
         app_api_id = body.get("id", "")
         app_id = body.get("app_id", "")
 
@@ -86,7 +86,7 @@ def create_app_router(prefix: str):
             return get_http_rsp(code=ret, msg="failed")
 
     @app_router.post("/app/api/get")
-    def get_app_api(body: Dict):
+    def get_app_api(body: dict):
         app_id = body.get("app_id")
 
         app_api_list = APP_MANAGER.get_app_api(app_id)

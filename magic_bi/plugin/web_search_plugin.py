@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import List
+
 from magic_bi.web_page import WebPage
 from magic_bi.tools.web_search_tool import WebSearchTool
 from magic_bi.plugin.base_plugin import BasePlugin
@@ -10,7 +10,7 @@ class WebSearchPlugin(BasePlugin):
         self._web_search_tool = WebSearchTool()
 
     def run(self, argument: str, context: str) -> str:
-        web_page_list: List[WebPage] = self._web_search_tool.process(query=argument)
+        web_page_list: list[WebPage] = self._web_search_tool.process(query=argument)
         final_content: str = ""
         for web_page in web_page_list:
             # web_page_content = web_page.content

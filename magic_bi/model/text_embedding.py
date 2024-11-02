@@ -3,14 +3,14 @@ from loguru import logger
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from magic_bi.config.model_config import ModelConfig
-from typing import Any
+
 
 class TextEmbedding():
-    _model: Any = None
+    _model: any = None
     _get_lock: Lock = Lock()
 
     def init(self, model_config: ModelConfig):
-        self._model = SentenceTransformer(model_config.model)
+        self._model = SentenceTransformer(model_config.model, trust_remote_code=True, local_files_only=True)
 
         logger.debug("TextEmbedding init suc")
         return 0

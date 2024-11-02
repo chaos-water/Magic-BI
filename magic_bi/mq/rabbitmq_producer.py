@@ -33,7 +33,7 @@ class RabbitmqProducer():
         self._channel.queue_declare(queue=queue, durable=True)
         logger.debug("declare_queue suc")
 
-    def produce(self, queue:str, msg: str):
+    def produce(self, queue:str, msg: str) -> int:
         # if self._connection.is_closed:
         #     self.init(self._config)
         #
@@ -45,3 +45,4 @@ class RabbitmqProducer():
 
         channel.basic_publish(exchange='', routing_key=queue, body=msg)
         logger.debug("produce suc")
+        return 0

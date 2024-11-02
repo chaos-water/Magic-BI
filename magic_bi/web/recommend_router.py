@@ -2,7 +2,7 @@ from loguru import logger
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from typing import Dict
+
 from magic_bi.utils.globals import GLOBALS, GLOBAL_CONFIG
 from magic_bi.utils.utils import get_http_rsp
 from magic_bi.message.message import Message
@@ -18,7 +18,7 @@ USER_PORTRAIT = UserPortrait()
 USER_PORTRAIT.init(GLOBALS)
 
 # url_prefix = "magic_bi"
-url_prefix = GLOBAL_CONFIG.web_config.url_prefix
+url_prefix = GLOBAL_CONFIG.system_config.url_prefix
 
 def create_recommend_router(prefix: str):
     recommend_router = APIRouter(prefix=prefix)
@@ -31,7 +31,7 @@ def create_recommend_router(prefix: str):
         return response
 
     @recommend_router.post("/%s/recommend/zero" % url_prefix)
-    def zero_recommend(request: Request ,body: Dict):
+    def zero_recommend(request: Request ,body: dict):
         recommendation_list = []
         user_id = request.headers.get("user_id", "default")
         
@@ -50,7 +50,7 @@ def create_recommend_router(prefix: str):
         return get_http_rsp(data=recommendation_list)
 
     @recommend_router.post("/%s/recommend/relevant" % url_prefix)
-    def relevant_recommend(request: Request, body: Dict):
+    def relevant_recommend(request: Request, body: dict):
         user_id = request.headers.get("user_id", "default")
         
         data_source_id = body.get("data_source_id")
@@ -65,7 +65,7 @@ def create_recommend_router(prefix: str):
         return get_http_rsp(data=recommendation_list)
 
     @recommend_router.post("/%s/recommend/personalization" % url_prefix)
-    def relevant_recommend(request: Request, body: Dict):
+    def relevant_recommend(request: Request, body: dict):
         user_id = request.headers.get("user_id", "default")
         
         user_portrait = USER_PORTRAIT.get_user_portrait(user_id)
@@ -74,7 +74,7 @@ def create_recommend_router(prefix: str):
         return get_http_rsp(data={"user_portrait": user_portrait})
 
     @recommend_router.post("/recommend/add_message")
-    def relevant_recommend(body: Dict):
+    def relevant_recommend(body: dict):
         message: Message = Message()
         message.from_dict(body)
         from sqlalchemy.orm.session import Session

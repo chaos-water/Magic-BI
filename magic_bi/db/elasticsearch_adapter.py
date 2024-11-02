@@ -7,6 +7,9 @@ from magic_bi.config.elasticsearch_config import ElasticsearchConfig
 
 
 class ElasticsearchAdapter(object):
+    def __init__(self):
+        self.es = None
+
     def init(self, elasticsearch_config: ElasticsearchConfig) -> int:
         self.es = Elasticsearch([elasticsearch_config.url], http_auth=(elasticsearch_config.user, elasticsearch_config.password))
 
@@ -74,3 +77,14 @@ class ElasticsearchAdapter(object):
         except exceptions.RequestError as e:
             logger.error(f"An error occurred during search: {e}")
             return {}
+
+if __name__ == '__main__':
+    elasticsearch_config = ElasticsearchConfig()
+    elasticsearch_config.port: int = 9200
+    elasticsearch_config.url: str = "http://192.168.68.96:9200"
+    elasticsearch_config.user: str = "elastic"
+    elasticsearch_config.password: str = "Abc123567."
+
+    elasticsearch_adapter = ElasticsearchAdapter()
+    elasticsearch_adapter.init(elasticsearch_config)
+    pass

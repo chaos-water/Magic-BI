@@ -1,11 +1,11 @@
 import json
 
 from loguru import logger
-from typing import List
+
 from magic_bi.data.data_source import DataSource
 from magic_bi.model.base_llm_adapter import BaseLlmAdapter
 
-def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_source_list: List):
+def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_source_list: list):
     prompt_template = \
 '''[OPTIONAL DATA CONNECTORS]:
     data_source_name | data connector url | data connector meta info
@@ -23,7 +23,7 @@ def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, aut
 
 Based on the above, output the data_sources which are relevant with the person input. Just output the json format data, no other explanation.'''
 
-    def build_prompt(person_input: str, data_source_list: List[DataSource]):
+    def build_prompt(person_input: str, data_source_list: list[DataSource]):
         provided_data_sources = ""
         for data_source in data_source_list:
             provided_data_sources += data_source.get_meta_info()
@@ -31,7 +31,7 @@ Based on the above, output the data_sources which are relevant with the person i
         return prompt_template.replace("{person_input}", person_input). \
             replace("{provided_data_sources}", provided_data_sources)
 
-    def decode_llm_output(output: str, authorized_data_source_list: List) -> list[DataSource]:
+    def decode_llm_output(output: str, authorized_data_source_list: list) -> list[DataSource]:
         relevant_data_source_list = []
         try:
             relevant_data_source_dict = json.loads(output)
@@ -50,14 +50,6 @@ Based on the above, output the data_sources which are relevant with the person i
 
     logger.debug("get_relevant_data_source suc, relevant_data_source_list cnt:%d" % len(relevant_data_source_list))
     return relevant_data_source_list
-
-def get_env_info() -> str:
-    env_info = ""
-
-    from magic_bi.utils.utils import generate_formatted_time
-    env_info += "Current Time: " + generate_formatted_time()
-
-    return env_info
 
 
 import json

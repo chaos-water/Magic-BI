@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Dict
+
 from loguru import logger
 from fastapi.websockets import WebSocket
 from magic_bi.io.base_io import BaseIo

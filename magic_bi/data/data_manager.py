@@ -1,4 +1,4 @@
-from typing import List
+
 from loguru import logger
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ from magic_bi.utils.globals import Globals
 from magic_bi.data.data import Data, DATA_TYPE, get_supported_doc_types, get_supported_image_types, get_supported_video_types
 from magic_bi.doc.decode_doc import decode_doc
 from magic_bi.doc.text_summarizer import summarize, extract_tags
+from magic_bi.data.data import DataChunk
 
 retrieve_triples_prompt_template = """
 [Text To Retrieve]
@@ -41,20 +42,40 @@ class DataManager():
 
         chunk_index = 0
         for content_chunk in content_chunk_list:
+            if content_chunk.strip() == "":
+                continue
+
+            chunk_index += 1
             qdrant_point: QdrantPoint = QdrantPoint()
             qdrant_point.vector: list = self.globals.text_embedding.get(content_chunk)
             qdrant_point.payload: dict = {"file_id": data.id, "file_name": data.name, "data_type": DATA_TYPE.DOC.value, "chunk_index": chunk_index,
                                           "chunk_content": content_chunk}
 
-            ret = self.globals.qdrant_adapter.upsert(collection_id=data.dataset_id + "_chunk",
-                                                     qdrant_point=qdrant_point)
+            ret = self.globals.qdrant_adapter.upsert(collection_id=data.dataset_id + "_chunk", qdrant_point=qdrant_point)
             if ret != 0:
                 logger.error("qdrant upsert failed, dataset_id:")
 
-            ret = self.globals.elasticsearch_adapter.add_document(index_name=data.dataset_id,
-                                                                  document=qdrant_point.payload)
+            ret = self.globals.elasticsearch_adapter.add_document(index_name=data.dataset_id, document=qdrant_point.payload)
             if ret != 0:
                 logger.error("elasticsearch upsert failed, dataset_id:")
+
+            from magic_bi.data.data import DataChunk
+            data_chunk = DataChunk()
+            data_chunk.chunk_index = chunk_index
+            data_chunk.chunk_content = content_chunk
+            data_chunk.user_id = data.user_id
+            data_chunk.dataset_id = data.dataset_id
+            data_chunk.file_id = data.id
+
+            try:
+                with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
+                    session.add(data_chunk)
+                    session.commit()
+
+            except Exception as e:
+                logger.error("add data failed")
+                logger.error("catch exception:%s" % str(e))
+                return -1
 
         logger.debug("add_doc suc")
         return 0
@@ -149,21 +170,37 @@ class DataManager():
             session.query(Data).filter(Data.id == data.id).delete()
             session.commit()
 
+            session.query(DataChunk).filter(DataChunk.file_id == data.id).delete()
+            session.commit()
+
         logger.debug("delete data suc")
         return 0
 
-    def get(self, user_id: str, dataset_id: str, page_index: int, page_size: int) -> List[Data]:
+    def get(self, user_id: str, dataset_id: str, page_index: int, page_size: int) -> list[Data]:
         if page_index < 1:
             page_index = 1
 
         offset = (page_index - 1) * page_size
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            data_list: List[Data] = session.query(Data).filter(Data.user_id == user_id, Data.dataset_id == dataset_id).\
+            data_list: list[Data] = session.query(Data).filter(Data.user_id == user_id, Data.dataset_id == dataset_id).\
             limit(page_size).offset(offset).all()
 
         logger.debug("get data suc, data_cnt:%d" % len(data_list))
         return data_list
 
+    def get_chunks(self, dataset_id: str, file_id: str, page_index: int, page_size: int) -> (list[DataChunk], int):
+        if page_index < 1:
+            page_index = 1
+
+        offset = (page_index - 1) * page_size
+        with (Session(self.globals.sql_orm.engine, expire_on_commit=False) as session):
+            data_chunk_list: list[DataChunk] = session.query(DataChunk).filter(DataChunk.dataset_id == dataset_id, DataChunk.file_id == file_id).\
+            order_by(DataChunk.chunk_index.asc()).limit(page_size).offset(offset).all()
+
+            total_cnt = session.query(DataChunk).filter(DataChunk.dataset_id == dataset_id, DataChunk.file_id == file_id).count()
+
+        logger.debug("get_chunks suc, chunk_cnt:%d" % len(data_chunk_list))
+        return data_chunk_list, total_cnt
 
     def count(self, user_id: str, dataset_id: str) -> int:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:

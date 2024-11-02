@@ -1,4 +1,3 @@
-from typing import Dict, List
 import shutil
 from loguru import logger
 from magic_bi.utils.globals import Globals, GLOBALS

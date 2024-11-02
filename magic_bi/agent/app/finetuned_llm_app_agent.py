@@ -1,5 +1,5 @@
 import json
-from typing import List
+
 
 from magic_bi.agent.memmory import Memmory
 from loguru import logger
@@ -9,9 +9,7 @@ from magic_bi.message.message import Message
 from magic_bi.utils.globals import Globals
 from magic_bi.io.base_io import BaseIo
 from magic_bi.agent.agent_meta import AgentMeta
-from magic_bi.config.agent_config import AgentConfig
 from magic_bi.app.app_api import AppApi
-from typing import List, Dict
 from sqlalchemy.orm.session import Session
 from magic_bi.app.app import App
 
@@ -90,11 +88,11 @@ class AppAgent(BaseAgent):
         logger.debug("init suc")
         return 0
 
-    def get_app_api_list_and_dict(self, app_id: str) -> (List, Dict):
+    def get_app_api_list_and_dict(self, app_id: str) -> (list, dict):
         path_2_app_api_dict = {}
         try:
             with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-                app_api_list: List[AppApi] = session.query(AppApi).filter(AppApi.app_id == app_id).all()
+                app_api_list: list[AppApi] = session.query(AppApi).filter(AppApi.app_id == app_id).all()
 
                 for app_api in app_api_list:
                     path_2_app_api_dict[app_api.path] = app_api
@@ -105,7 +103,7 @@ class AppAgent(BaseAgent):
             logger.error("catch exception:%s" % str(e))
             return [], {}
 
-    def get_brief_app_api_descriptions(self, app_api_list: List[AppApi]) -> str:
+    def get_brief_app_api_descriptions(self, app_api_list: list[AppApi]) -> str:
         output_api_description = ""
         index = 0
         for app_api in app_api_list:
@@ -124,7 +122,7 @@ class AppAgent(BaseAgent):
         logger.debug("get_brief_app_api_descriptions suc")
         return output_api_description
 
-    def get_brief_app_api_descriptions_v2(self, app_api_list: List[AppApi]) -> str:
+    def get_brief_app_api_descriptions_v2(self, app_api_list: list[AppApi]) -> str:
             output_api_description = ""
             index = 0
             for app_api in app_api_list:
@@ -168,7 +166,7 @@ class AppAgent(BaseAgent):
     def get_app(self, app_id) -> App:
         try:
             with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-                app_list: List[App] = session.query(App).filter(App.id == app_id).all()
+                app_list: list[App] = session.query(App).filter(App.id == app_id).all()
 
             logger.debug("get_app suc")
             if len(app_list) > 0:
@@ -183,7 +181,7 @@ class AppAgent(BaseAgent):
     def request_app(self):
         pass
 
-    def process(self, message: Message) -> Dict:
+    def process(self, message: Message) -> dict:
         app: App = self.get_app(message.app_id)
         if app is None:
             logger.error("process failed")

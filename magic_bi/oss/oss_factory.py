@@ -30,6 +30,9 @@ class OssFactory:
     def delete_bucket(self, bucket_name: str="default") -> int:
         return self._storage_adapter.delete_bucket(bucket_name)
 
+    def add_file_by_path(self, file_id: str, file_path: str, bucket_name: str= "default") -> int:
+        return self._storage_adapter.add_file_by_path(file_id, file_path, bucket_name)
+
     def add_file(self, file_id: str, file_bytes: bytes, bucket_name: str= "default") -> int:
 
         return self._storage_adapter.add_file(file_id, file_bytes, bucket_name)
@@ -37,8 +40,11 @@ class OssFactory:
     def add_file_without_id(self, file_bytes: bytes, bucket_name: str= "default") -> int:
         return self._storage_adapter.add_file_without_id(file_bytes, bucket_name)
 
+    def stream_file(self, bucket_name: str, file_id: str, chunk_size: int = 10 * 1024 * 1024):
+        return self._storage_adapter.stream_file(bucket_name, file_id, chunk_size)
+
     def get_file(self, file_id: str, bucket_name: str="default") -> (bytes, int):
-        return self._storage_adapter.get_file(bucket_name, file_id)
+        return self._storage_adapter.get_file(file_id, bucket_name)
 
     def del_file(self, file_id: str, bucket_name: str="default") -> int:
-        return self._storage_adapter.del_file(bucket_name, file_id)
+        return self._storage_adapter.del_file(file_id, bucket_name)

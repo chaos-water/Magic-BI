@@ -3,10 +3,13 @@ from sqlalchemy.orm import sessionmaker
 import pandas as pd
 from loguru import logger
 from magic_bi.plugin.base_plugin import BasePlugin
-from magic_bi.utils.utils import format_db_url
+from magic_bi.utils.utils import format_db_url, clean_llm_output
+
+
 class SqlPlugin(BasePlugin):
     def run(self, sql_cmd: str, db_url: str) -> (int, str):
-        sql_cmd = self._clean_argument(sql_cmd)
+        # sql_cmd = self._clean_argument(sql_cmd)
+        sql_cmd = clean_llm_output("sql", sql_cmd)
 
         try:
             db_url = format_db_url(db_url)
@@ -32,17 +35,17 @@ class SqlPlugin(BasePlugin):
             session.close()
             engine.dispose()
 
-    def _clean_argument(self, argument: str) -> str:
-        import re
-        if "```sql" in argument:
-            pattern = re.compile(r'```sql(.*?)```', re.DOTALL)
-
-            # 提取并清理代码块
-            matches = pattern.findall(argument)
-            cleaned_code = [match.strip() for match in matches]
-
-            # 将提取到的代码合并为一个字符串
-            extracted_code = '\n'.join(cleaned_code)
-            return extracted_code
-        else:
-            return argument
+    # def _clean_argument(self, argument: str) -> str:
+    #     import re
+    #     if "```sql" in argument:
+    #         pattern = re.compile(r'```sql(.*?)```', re.DOTALL)
+    #
+    #         # 提取并清理代码块
+    #         matches = pattern.findall(argument)
+    #         cleaned_code = [match.strip() for match in matches]
+    #
+    #         # 将提取到的代码合并为一个字符串
+    #         extracted_code = '\n'.join(cleaned_code)
+    #         return extracted_code
+    #     else:
+    #         return argument

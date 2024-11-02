@@ -2,13 +2,13 @@ import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
 import io
-from typing import List
+
 import os
 from magic_bi.doc.doc_paragraph import DocParagraph
 from magic_bi.model.text_embedding import TextEmbedding
 from magic_bi.model.openai_adapter import OpenaiAdapter
 
-def decode_pdf(pdf_bytes: bytes, max_chunk_size: int, text_embedding: TextEmbedding, openai_adapter: OpenaiAdapter) -> List:
+def decode_pdf(pdf_bytes: bytes, max_chunk_size: int, text_embedding: TextEmbedding, openai_adapter: OpenaiAdapter) -> list:
     doc_paragraph = DocParagraph(text_embedding=text_embedding, openai_adapter=openai_adapter, max_chunk_size=max_chunk_size)
     # 打开 PDF 文件
 
@@ -54,7 +54,7 @@ def decode_pdf(pdf_bytes: bytes, max_chunk_size: int, text_embedding: TextEmbedd
                         doc_paragraph.content += ocr_text
 
         doc_paragraph.try_split_content()
-        return [doc_paragraph]
+        return [[doc_paragraph], doc_paragraph.content]
     finally:
         import shutil
         if os.path.exists(temp_dir):

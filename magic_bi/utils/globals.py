@@ -8,7 +8,6 @@ from magic_bi.db.timescale_orm import TimescaleOrm
 from magic_bi.oss.oss_factory import OssFactory
 from magic_bi.model.text_embedding import TextEmbedding
 from magic_bi.db.qdrant_adapter import QdrantAdapter
-# from magic_bi.db.neo4j_adapter import Neo4jAdapter
 from magic_bi.model.text_reranker_adapter import TextRerankeAdapter
 from magic_bi.db.elasticsearch_adapter import ElasticsearchAdapter
 from magic_bi.model.openai_adapter import OpenaiAdapter

@@ -7,3 +7,5 @@ class RabbitmqConfig(BaseConfig):
         self.user: str = ""
         self.password: str = ""
         self.expiration: int = 7200
+
+        self.internal_mq_queue = "magic_bi"

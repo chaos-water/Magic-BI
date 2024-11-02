@@ -2,7 +2,7 @@ from magic_bi.agent.memmory import Memmory
 from sqlalchemy.orm import Session
 import json
 from loguru import logger
-from typing import List
+
 
 from magic_bi.agent.base_agent import BaseAgent
 from magic_bi.message.message import Message
@@ -137,7 +137,7 @@ DO NOT NEED ANY EXPLANATION.
 '''
 
 
-def build_prompt_query_data(person_input: str, data_source_list: List[DataSource], memmory: str):
+def build_prompt_query_data(person_input: str, data_source_list: list[DataSource], memmory: str):
     provided_data_sources = ""
     for data_source in data_source_list:
         provided_data_sources += data_source.get_meta_info()
@@ -166,7 +166,7 @@ Based on the above, fix previous code error to accomplish to satisfy user requir
 '''
 
 
-def build_prompt_query_data_fix_error(person_input: str, data_source_list: List[DataSource], previous_code: str = "", previous_error: str = ""):
+def build_prompt_query_data_fix_error(person_input: str, data_source_list: list[DataSource], previous_code: str = "", previous_error: str = ""):
     provided_data_sources = ""
     for data_source in data_source_list:
         provided_data_sources += data_source.get_meta_info()
@@ -223,7 +223,7 @@ def decode_llm_output_answer_user(output: str) -> str:
 [CONTEXT OF THE PREVIOUS CONVERSATION]
 {memmory}
 """
-def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_source_list: List, memmory: str):
+def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_source_list: list, memmory: str):
     prompt_template_relevant_data_source = '''
 [OPTIONAL DATA CONNECTORS]:
     data_source_name | data connector url | data connector meta info
@@ -242,7 +242,7 @@ def get_relevant_data_source(llm_adapter: BaseLlmAdapter, person_input: str, aut
 Based on the above, output the data_sources which are relevant with the person input. Just output the json format data, no other explanation.
 '''
 
-    def build_prompt_relevant_data_source(person_input: str, data_source_list: List[DataSource], memmory: str= ""):
+    def build_prompt_relevant_data_source(person_input: str, data_source_list: list[DataSource], memmory: str= ""):
         provided_data_sources = ""
         for data_source in data_source_list:
             provided_data_sources += data_source.get_meta_info()
@@ -251,7 +251,7 @@ Based on the above, output the data_sources which are relevant with the person i
             replace("{provided_data_sources}", provided_data_sources)
             # replace("{provided_data_sources}", provided_data_sources).replace("{memmory}", memmory)
 
-    def decode_llm_output_relevant_data_source(output: str, authorized_data_source_list: List) -> list[DataSource]:
+    def decode_llm_output_relevant_data_source(output: str, authorized_data_source_list: list) -> list[DataSource]:
         relevant_data_source_list = []
         try:
             relevant_data_source_dict = json.loads(output)
@@ -275,7 +275,7 @@ Based on the above, output the data_sources which are relevant with the person i
 [CONTEXT OF THE PREVIOUS CONVERSATION]
     {memmory}
 '''
-def get_relevant_data(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_list: List, memmory: str):
+def get_relevant_data(llm_adapter: BaseLlmAdapter, person_input: str, authorized_data_list: list, memmory: str):
     prompt_template_relevant_data = '''
 [OPTIONAL DATA]:
     data_name | data meta info
@@ -299,10 +299,10 @@ Based on the above, output the data which are relevant with the person input. Ju
             str_with_meta_info = "%s | \n" % (data.name)
         elif data.type == DATA_TYPE.SQL_DB.value:
             from sqlalchemy.orm.session import Session
-            from typing import List
+            
 
             with Session(GLOBALS.sql_orm.engine) as session:
-                data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data.hash).all()
+                data_source_list: list[DataSource] = session.query(DataSource).filter(DataSource.id == data.hash).all()
                 if len(data_source_list) == 0:
                     return ""
 
@@ -314,7 +314,7 @@ Based on the above, output the data which are relevant with the person input. Ju
 
         return str_with_meta_info
 
-    def build_prompt_relevant_data(person_input: str, data_list: List[Data]):
+    def build_prompt_relevant_data(person_input: str, data_list: list[Data]):
         provided_data = ""
         for data in data_list:
             provided_data += generate_data_meta_info(data)
@@ -323,7 +323,7 @@ Based on the above, output the data which are relevant with the person input. Ju
             replace("{provided_data}", provided_data)
             # replace("{provided_data}", provided_data).replace("memmory", memmory)
 
-    def decode_llm_output_relevant_data(output: str, authorized_data_list: List) -> list[Data]:
+    def decode_llm_output_relevant_data(output: str, authorized_data_list: list) -> list[Data]:
         relevant_data_list = []
         try:
             relevant_data_dict = json.loads(output)
@@ -458,11 +458,11 @@ class PandasAgent(BaseAgent):
     def get_relevant_data_source_from_input(self, user_id: str, person_input: str, data_source_id: str) -> list[DataSource]:
         if data_source_id != "all":
             with Session(self.globals.sql_orm.engine) as session:
-                relevant_data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data_source_id).all()
+                relevant_data_source_list: list[DataSource] = session.query(DataSource).filter(DataSource.id == data_source_id).all()
 
         else:
             with Session(self.globals.sql_orm.engine) as session:
-                authorized_data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.user_id == user_id).all()
+                authorized_data_source_list: list[DataSource] = session.query(DataSource).filter(DataSource.user_id == user_id).all()
 
             for authorized_data_source in authorized_data_source_list:
                 authorized_data_source.generate_meta_info()
@@ -479,7 +479,7 @@ class PandasAgent(BaseAgent):
 
     def get_relevant_data_from_input(self, user_id: str, person_input: str, dataset_id: str, memmory: str) -> list[DataSource]:
         with Session(self.globals.sql_orm.engine) as session:
-            authorized_data_list: List[Data] = session.query(Data).filter(Data.dataset_id == dataset_id, Data.user_id == user_id).all()
+            authorized_data_list: list[Data] = session.query(Data).filter(Data.dataset_id == dataset_id, Data.user_id == user_id).all()
 
         # for authorized_data in authorized_data_list:
         #     authorized_data.generate_meta_info()

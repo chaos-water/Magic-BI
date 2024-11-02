@@ -1,6 +1,6 @@
 from loguru import logger
 from fastapi import APIRouter, Request
-from typing import Dict
+
 
 # from entity.collection import Collection
 from magic_bi.user import User
@@ -10,13 +10,13 @@ from magic_bi.utils.utils import get_http_rsp
 user_router = APIRouter()
 
 # url_prefix = "magic_bi"
-url_prefix = GLOBAL_CONFIG.web_config.url_prefix
+url_prefix = GLOBAL_CONFIG.system_config.url_prefix
 
 def create_user_router(prefix: str):
     user_router = APIRouter(prefix=prefix)
 
     @user_router.post("/user/add")
-    def add_user(body: Dict):
+    def add_user(body: dict):
         user_name = body.get("user_name")
 
         user: User = User()
@@ -31,7 +31,7 @@ def create_user_router(prefix: str):
         return get_http_rsp(data={"user_id": user.user_id})
 
     @user_router.post("/user/delete")
-    def delete_user(request: Request, body: Dict):
+    def delete_user(request: Request, body: dict):
         user_id = request.headers.get("user_id", "default")
 
         session = GLOBALS.sql_orm.get_session()
@@ -46,7 +46,7 @@ def create_user_router(prefix: str):
         return get_http_rsp()
 
     @user_router.post("/user/get")
-    def get_user(body: Dict):
+    def get_user(body: dict):
         user_list = []
 
         session = GLOBALS.sql_orm.get_session()

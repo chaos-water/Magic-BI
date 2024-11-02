@@ -2,10 +2,10 @@ import time
 from loguru import logger
 import uuid
 from enum import Enum
-from typing import Dict, List
-from sqlalchemy import Column, String, BigInteger, Integer, create_engine, inspect, Text
+from sqlalchemy import Column, String, BigInteger, Integer, create_engine, inspect, Text, select
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
 
 from magic_bi.db.sql_orm import BASE
 from magic_bi.utils.utils import format_db_url
@@ -43,13 +43,16 @@ class DataSourceOrm(BASE):
         self.name = ""
         self.url = ""
 
-    def from_dict(self, data_dict: Dict):
+    def from_dict(self, data_dict: dict):
         for key, value in data_dict.items():
             if key in self.__dict__ and value is not None:
                 self.__dict__[key] = value
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return self.__dict__
+
+# 为这部分代码添加个功能，输入一个表名table_name和一个大于零的整数cnt，返回一个字符串。这个字符串的第一行是表名，后续的几行是表中的cnt条数据值。
+# 字符串打印出来的效果，类似数据库软件中呈现的效果，有较好的可视化效果。
 
 class DataSource():
     def __init__(self):
@@ -66,14 +69,19 @@ class DataSource():
     def init(self, data_source_orm: DataSourceOrm) -> int:
         self.orm = data_source_orm
         data_source_url = format_db_url(self.orm.url)
-        self.engine = create_engine(data_source_url)
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        try:
+            self.engine = create_engine(data_source_url)
+            Session = sessionmaker(bind=self.engine)
+            self.session = Session()
+            self.engine.connect()
 
-        logger.debug("DataSource init suc")
-        return 0
+            logger.debug("DataSource init suc")
+            return 0
+        except Exception as e:
+            logger.error("DataSource init failed")
+            return -1
 
-    def get_table_column_batch(self, table_list: List, priority: str="", is_mini: bool = False):
+    def get_table_column_batch(self, table_list: list, priority: str="", is_mini: bool = False):
         full_table_description = ""
         index = 0
         for table in table_list:
@@ -180,77 +188,6 @@ class DataSource():
 
         return output_str
 
-
-    def get_table_column_mini(self, table_name, table_index: int):
-        metadata = MetaData()
-        table = Table(table_name, metadata, autoload_with=self.engine)
-
-        # Get columns information
-        columns = []
-        for column in table.columns:
-            column_name = column.name
-            column_type = str(column.type).replace(' COLLATE "utf8mb4_unicode_ci"', "")
-            column_comment = column.comment if column.comment else ''
-            columns.append({
-                'column_name': column_name,
-                'column_type': column_type,
-                'column_comment': column_comment
-            })
-
-        output = []
-
-        columns_line = ""
-        for column in columns:
-            column_name = column['column_name']
-            if column_name.strip() == "":
-                continue
-
-            columns_line += f"{column_name},"
-        columns_line = columns_line.rstrip(",")
-        output.append(f"{table_name}: {columns_line}\n\n")
-
-        output_str = "\n".join(output)
-
-        return output_str
-
-    def get_table_column_mini_v2(self, table_name, table_index: int):
-        metadata = MetaData()
-        table = Table(table_name, metadata, autoload_with=self.engine)
-
-        columns = []
-        for column in table.columns:
-            column_name = column.name
-            column_type = str(column.type).replace(' COLLATE "utf8mb4_unicode_ci"', "")
-            column_comment = column.comment if column.comment else ''
-            columns.append({
-                'column_name': column_name,
-                'column_type': column_type,
-                'column_comment': column_comment
-            })
-
-        output = []
-        output.append(f"\tTable: {table_name}")
-
-        column_title = "\tColumn Name | Column Comment"
-        output.append(column_title)
-
-        for column in columns:
-            column_name = column['column_name']
-            column_comment = column['column_comment'].strip("\n")
-            if column_name.strip() == "":
-                continue
-
-            output.append(f"\t{column_name:<15} | {column_comment:<20}")
-
-        if table_index == 0:
-            output_str = "[Table %d]" % table_index + "\n"
-        else:
-            output_str = "\n\n[Table %d]" % table_index + "\n"
-
-        output_str += "\n".join(output)
-
-        return output_str
-
     def get_table_column_mini_v3(self, table_name, table_index: int):
         metadata = MetaData()
         table = Table(table_name, metadata, autoload_with=self.engine)
@@ -289,20 +226,118 @@ class DataSource():
 
         return output_str
 
-    def get_table_list(self) -> List[str]:
+    def get_table_list(self) -> list[str]:
         inspector = inspect(self.engine)
 
         table_list = inspector.get_table_names()
         logger.debug("get_table_list, table_list cnt:%d" % len(table_list))
         return table_list
 
+    # 对这部分代码做个改造，返回的数据是这个表中随机的cnt条数据。如果表中的数据量，不足cnt个，则全部返回。
+
+    def get_table_data_preview(self, table_name: str, cnt: int) -> str:
+        """
+            获取指定表的随机 cnt 条数据并格式化成字符串显示。
+
+            Args:
+                table_name (str): 表名
+                cnt (int): 要显示的行数
+
+            Returns:
+                str: 表名和随机 cnt 条数据的字符串
+            """
+        # 检查输入参数
+        if cnt <= 0:
+            raise ValueError("参数 cnt 必须是一个大于零的整数。")
+
+        # 加载表
+        metadata = MetaData()
+        table = Table(table_name, metadata, autoload_with=self.engine)
+
+        # 查询表中所有数据的行数
+        total_count = self.session.execute(select(func.count()).select_from(table)).scalar()
+
+        # 如果数据量不足 cnt，则只查询全部数据；否则随机取 cnt 条
+        limit = min(cnt, total_count)
+        query = select(table).order_by(func.random()).limit(limit)
+        result = self.session.execute(query).fetchall()
+
+        return self.to_data_preview(table, table_name, result)
+        # # 获取列名
+        # column_names = [column.name for column in table.columns]
+        #
+        # # 格式化输出
+        # output = [f"[Table {table_name} Data Preview]:", "-" * (len(table_name) + 7)]
+        # header = " | ".join(column_names)
+        # output.append(header)
+        # output.append("-" * len(header))
+        #
+        # # 添加数据行
+        # for row in result:
+        #     row_data = " | ".join([str(value) for value in row])
+        #     output.append(row_data)
+        #
+        # # 将输出转换成字符串
+        # return "\n".join(output)
+
+    def to_data_preview(self, table, table_name, result) -> str:
+        import re
+
+        # 获取列名
+        column_names = [column.name for column in table.columns]
+
+        # 格式化输出
+        output = [f"[Table {table_name} Data Preview]:", "-" * (len(table_name) + 7)]
+        header = " | ".join(column_names)
+        output.append(header)
+        output.append("-" * len(header))
+
+        # 添加数据行
+        for row in result:
+            row_data = " | ".join([str(value) for value in row])
+            output.append(row_data)
+
+        # 将输出转换成字符串
+        data_preview =  "\n".join(output)
+        data_preview = re.sub(r'\n+', '\n', data_preview)
+        return data_preview
+
+    def get_table_data_preview_by_index(self, table_name: str, index: int, cnt: int=1) -> str:
+        """
+        获取指定表的第 index 行数据，如果 index 超过总行数，则返回最后一行数据。
+
+        Args:
+            table_name (str): 表名
+            index (int): 要查询的行数索引（从0开始）
+
+        Returns:
+            str: 表的第 index 行数据或最后一行数据的字符串
+        """
+        # 加载表
+        metadata = MetaData()
+        table = Table(table_name, metadata, autoload_with=self.engine)
+
+        # 查询表中所有数据的行数
+        total_count = self.session.execute(select(func.count()).select_from(table)).scalar()
+
+        # 检查 index 是否超过总行数，若超过则设为最后一行的 index
+        valid_index = min(index, total_count - 1)
+
+        # 查询第 valid_index 行的数据
+        query = select(table).offset(valid_index).limit(cnt)
+        result = self.session.execute(query).fetchall()
+
+        return self.to_data_preview(table, table_name, result)
+        # 获取列名
+        # column_names = [column.name for column in table.columns]
+        #
+        # # 格式化输出
+        # output = [f"[Table {table_name} Row {valid_index}]:", "-" * (len(table_name) + 7)]
+        # row_data = " | ".join(f"{col}: {val}" for col, val in zip(column_names, result))
+        # output.append(row_data)
+        #
+        # # 将输出转换成字符串
+        # return "\n".join(output)
+
     def to_str(self) -> str:
         return "%s | %s\n" % (self.name, self.url)
-
-    # def from_dict(self, data_dict: Dict):
-    #     for key, value in data_dict.items():
-    #         if key in self.__dict__ and value is not None:
-    #             self.__dict__[key] = value
-
-    # def to_dict(self) -> Dict:
-    #     return self.__dict__

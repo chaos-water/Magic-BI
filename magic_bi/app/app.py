@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, BigInteger
 from loguru import logger
 import time
 
-from typing import Dict
+
 from magic_bi.db.sql_orm import BASE
 
 
@@ -22,7 +22,7 @@ class App(BASE):
         self.id = uuid.uuid1().hex
         self.add_timestamp = int(time.time() * 1000)
 
-    def from_dict(self, input_dict: Dict) -> int:
+    def from_dict(self, input_dict: dict) -> int:
         for key, value in input_dict.items():
             if key in self.__dict__ and value is not None:
                 self.__dict__[key] =  value
@@ -30,7 +30,7 @@ class App(BASE):
         logger.debug("from_dict suc")
         return 0
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         output_dict = {}
         for key, value in self.__dict__.items():
             if key.startswith("_"):

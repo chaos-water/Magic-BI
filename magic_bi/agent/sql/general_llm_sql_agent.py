@@ -2,21 +2,16 @@ from magic_bi.agent.memmory import Memmory
 from sqlalchemy.orm import Session
 import json
 from loguru import logger
-from typing import List
+
 
 from magic_bi.agent.base_agent import BaseAgent
-# from magic_bi.message.llm_transaction import LlmTransaction
 from magic_bi.message.message import Message
 from magic_bi.utils.globals import Globals
 from magic_bi.io.base_io import BaseIo
 from magic_bi.data.data_source import DataSource
-# from magic_bi.data.data import Data, DATA_TYPE
 from magic_bi.agent.agent_meta import AgentMeta
-# from magic_bi.model.base_llm_adapter import BaseLlmAdapter
-# from magic_bi.utils.globals import GLOBALS
-from magic_bi.agent.utils import get_env_info
+from magic_bi.utils.utils import get_env_info
 from magic_bi.data.data_source import get_qa_template_embedding_collection_id, get_table_description_embedding_collection_id, get_domain_knowledge_embedding_collection_id
-# from magic_bi.message.llm_transaction import LlmTransaction, LLM_TRANSACTION_TYPE
 
 def decode_llm_output_in_json_list_format(input_text: str) -> list:
     import re
@@ -193,22 +188,6 @@ class GeneralLlmSqlAgent(BaseAgent):
             result = [item for item in list2 if item not in set1]
             return result
 
-        # select_table_from_referenced_sql_llm_transaction = LlmTransaction()
-        # select_table_by_llm_guess_llm_transaction = LlmTransaction()
-        #
-        # select_table_from_referenced_sql_llm_transaction.llm_input = select_tables_from_refecenced_sql_prompt
-        # select_table_from_referenced_sql_llm_transaction.llm_output = str(table_list_from_referenced_sql)
-        # select_table_from_referenced_sql_llm_transaction.type = LLM_TRANSACTION_TYPE.SELECT_TABLE_FROM_REFENCED_TABLE.value
-        # select_table_from_referenced_sql_llm_transaction.message_id = message_id
-        #
-        # select_table_by_llm_guess_llm_transaction.llm_input = select_tables_by_llm_guess_prompt
-        # select_table_by_llm_guess_llm_transaction.llm_output = str(table_list_by_llm_guess)
-        # select_table_by_llm_guess_llm_transaction.type = LLM_TRANSACTION_TYPE.SELECT_TABLE_BY_LLM_GUESS.value
-        # select_table_by_llm_guess_llm_transaction.message_id = message_id
-        #
-        # self.save_llm_transaction(select_table_from_referenced_sql_llm_transaction)
-        # self.save_llm_transaction(select_table_by_llm_guess_llm_transaction)
-
         table_list_by_llm_guess = remove_duplicates(table_list_from_referenced_sql, table_list_by_llm_guess)
         logger.debug("get_relevant_tables suc, table_list_from_referenced_sql: %s, table_list_form_llm_guess:%s" % (table_list_from_referenced_sql, table_list_by_llm_guess))
         return table_list_from_referenced_sql, table_list_by_llm_guess
@@ -283,7 +262,7 @@ class GeneralLlmSqlAgent(BaseAgent):
     #         session.add(transaction)
     #         session.commit()
 
-    def get_user_qa_template(self, user_question_vector: List, data_source_id: str) -> str:
+    def get_user_qa_template(self, user_question_vector: list, data_source_id: str) -> str:
         few_shot_examples = ""
         collection_id = get_qa_template_embedding_collection_id(data_source_id)
         result_list = self.globals.qdrant_adapter.search(collection_id, user_question_vector, cnt=2)
@@ -303,7 +282,7 @@ class GeneralLlmSqlAgent(BaseAgent):
 
         return few_shot_examples
 
-    def get_user_table_descriptions(self, user_question_vector: List, data_source_id: str) -> str:
+    def get_user_table_descriptions(self, user_question_vector: list, data_source_id: str) -> str:
         # table_name_collection_id = get_table_name_template_embedding_collection_id(data_source_id)
         collection_id = get_table_description_embedding_collection_id(data_source_id)
         result_list = self.globals.qdrant_adapter.search(collection_id, user_question_vector, cnt=10)
@@ -328,7 +307,7 @@ class GeneralLlmSqlAgent(BaseAgent):
     # def get_table_column_descriptions(self):
     #     pass
 
-    def get_relevant_domain_knowledge(self, user_question_vector: List, data_source_id: str) -> str:
+    def get_relevant_domain_knowledge(self, user_question_vector: list, data_source_id: str) -> str:
         collection_id = get_domain_knowledge_embedding_collection_id(data_source_id)
         result_list = self.globals.qdrant_adapter.search(collection_id, user_question_vector, cnt=10, score_threshold=0.0)
         # result_list = self.globals.qdrant_adapter.get_points(collection_id)
@@ -371,7 +350,7 @@ class GeneralLlmSqlAgent(BaseAgent):
 
     def get_data_source(self, user_id: str, data_source_id: str) -> DataSource:
         with Session(self.globals.sql_orm.engine) as session:
-            data_source_list: List[DataSource] = session.query(DataSource).filter(DataSource.id == data_source_id).all()
+            data_source_list: list[DataSource] = session.query(DataSource).filter(DataSource.id == data_source_id).all()
 
             if len(data_source_list) == 0:
                 logger.error("get_data_source failed, user_id:%s, data_source_id:%s" % (user_id, data_source_id))

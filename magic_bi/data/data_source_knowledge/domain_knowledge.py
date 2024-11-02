@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import Dict
+
 from sqlalchemy import Column, String, BigInteger
 
 from magic_bi.db.sql_orm import BASE
@@ -19,7 +19,7 @@ class DomainKnowledge(BASE):
         self.content = ""
         self.add_timestamp = int(time.time() * 1000)
 
-    def from_dict(self, body: Dict):
+    def from_dict(self, body: dict):
         self.id = body.get("id", "")
         if self.id == "":
             self.id = uuid.uuid1().hex

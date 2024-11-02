@@ -1,5 +1,5 @@
 import json
-from typing import List
+
 
 from loguru import logger
 # from sentence_transformers import util
@@ -119,7 +119,7 @@ def split_by_embedding(input_content: str, text_embedding: TextEmbedding, simila
     return outout_segment_list
 
 
-def extract_chunks_by_index(text: str, patterns: List):
+def extract_chunks_by_index(text: str, patterns: list):
     import re
     sentences = []
     for pattern in patterns:
@@ -142,7 +142,7 @@ split_content_prompt_template = \
 
 首先分析给定的条件，然后逐步解决问题，不要输出推理中间步骤，直接输出推理结果。"""
 
-def split_by_llm(input_content: str, openai_adapter: OpenaiAdapter) -> List[str]:
+def split_by_llm(input_content: str, openai_adapter: OpenaiAdapter) -> list[str]:
     split_content_prompt = split_content_prompt_template.replace("{content}", input_content)
 
     llm_output = openai_adapter.process(split_content_prompt)

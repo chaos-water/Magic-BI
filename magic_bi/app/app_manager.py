@@ -1,4 +1,4 @@
-from typing import List
+
 from loguru import logger
 from sqlalchemy.orm import Session
 
@@ -43,9 +43,9 @@ class AppManager():
         logger.debug("delete app suc")
         return 0
 
-    def get_app(self, user_id: str) -> List[App]:
+    def get_app(self, user_id: str) -> list[App]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            app_list: List[App] = session.query(App).filter(App.user_id == user_id).all()
+            app_list: list[App] = session.query(App).filter(App.user_id == user_id).all()
 
         logger.debug("get app suc, app_cnt:%d" % len(app_list))
         return app_list
@@ -64,9 +64,9 @@ class AppManager():
         logger.debug("add app_api suc")
         return 0
 
-    def get_app_api(self, app_id: str) -> List[AppApi]:
+    def get_app_api(self, app_id: str) -> list[AppApi]:
         with Session(self.globals.sql_orm.engine, expire_on_commit=False) as session:
-            app_api_list: List[AppApi] = session.query(AppApi).filter(AppApi.app_id == app_id).all()
+            app_api_list: list[AppApi] = session.query(AppApi).filter(AppApi.app_id == app_id).all()
 
         logger.debug("get app_api suc, app_api_cnt:%d" % len(app_api_list))
         return app_api_list
@@ -97,7 +97,7 @@ class AppManager():
         logger.debug("import_app_api suc")
         return 0
 
-    def translate_json_to_app_api(self, file_json_data: dict, user_id: str, app_id: str) -> List[AppApi]:
+    def translate_json_to_app_api(self, file_json_data: dict, user_id: str, app_id: str) -> list[AppApi]:
         app_api_list = []
 
         # 获取文档中的路径信息
@@ -153,5 +153,5 @@ class AppManager():
         return app_api_list
 
     def export_app_api(self, app_id: str) -> str:
-        app_api_list: List[AppApi] = self.get_app_api(app_id)
+        app_api_list: list[AppApi] = self.get_app_api(app_id)
 

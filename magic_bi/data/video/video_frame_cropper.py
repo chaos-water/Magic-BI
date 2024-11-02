@@ -2,7 +2,7 @@ import os.path
 
 import torch
 
-from typing import Dict
+
 from loguru import logger
 import cv2
 from magic_bi.utils.globals import Globals
@@ -15,7 +15,7 @@ class VideoFrameCropper():
         self.globals: Globals = globals
         return 0
 
-    def process(self, video_path: str) -> Dict:
+    def process(self, video_path: str) -> dict:
         try:
             index = 0
             output_timestamp_2_frame = {}

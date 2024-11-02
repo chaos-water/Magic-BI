@@ -15,7 +15,7 @@ from magic_bi.data.data_source_knowledge.table_description import TableDescripti
 from magic_bi.data.data_source_knowledge.table_column_description import TableColumnDescription
 from magic_bi.data.data_source_knowledge.domain_knowledge import DomainKnowledge
 
-DATA_SOURCE_MANAGER = DataSourceManager(globals=GLOBALS, lanuage_config=GLOBAL_CONFIG.language_config)
+DATA_SOURCE_MANAGER = DataSourceManager(globals=GLOBALS, lanuage_config=GLOBAL_CONFIG.system_config)
 
 
 def create_data_source_router(prefix: str):

@@ -2,7 +2,6 @@ from enum import Enum
 import json
 import time
 import uuid
-from typing import Dict, List
 from sqlalchemy import Column, Text, String, BigInteger
 # from magic_bi.db.orm import BASE
 from magic_bi.db.timescale_orm import TIMESCALE_BASE
@@ -38,6 +37,7 @@ class Message(TIMESCALE_BASE):
         self.id: str = uuid.uuid1().hex
         self.agent_id: str = ""
         self.agent_type: str = ""
+        self.work_flow_id: str = ""
         self.person_input: str = ""
         self.assistant_output: str = ""
         self.person_input_hash: str = ""
@@ -53,25 +53,25 @@ class Message(TIMESCALE_BASE):
         self.with_sql_cmd: bool = True
         self.with_sql_result: bool = True
         self.with_few_shot: bool = True
+        self.file_base64_list: list[str] = []
 
-    def from_dict(self, input_dict: Dict):
+    def from_dict(self, input_dict: dict):
         for key, value in input_dict.items():
             if key in self.__dict__ and value is not None:
                 self.__dict__[key] = value
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {"id": self.id, "agent_id": self.agent_id, "person_input": self.person_input}
 
     def is_legal(self) -> bool:
-        if self.person_input == "" or (self.agent_id == "" and self.agent_type == "") or (self.dataset_id == "" and \
-                                                                                    self.data_source_id == "" and \
-                                                                                    self.data_id == "" and \
-                                                                                    self.app_id == ""):
+        if ((self.person_input == "" and self.file_base64_list == []) or
+            (self.agent_id == "" and self.agent_type == "") or
+            (self.work_flow_id == "" and self.dataset_id == "" and self.data_source_id == "" and self.data_id == "" and self.app_id == "")):
             return False
 
         return True
 
-    def to_memory_item(self) -> Dict:
+    def to_memory_item(self) -> dict:
         return {"person_input": self.person_input,
                 "assistant_output": self.assistant_output,
                 "timestamp": self.timestamp}

@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import List
+
 
 from magic_bi.model import openai_adapter
 # from sentence_transformers import SentenceTransformer, util
@@ -12,8 +12,8 @@ class DocParagraph():
     def __init__(self, text_embedding: TextEmbedding = None, openai_adapter: OpenaiAdapter = None, max_chunk_size: int = 512):
         self.title: str = ""
         self.content: str = ""
-        self.splitted_content: List[str] = []
-        self.sub_paragraphs: List[DocParagraph] = []
+        self.splitted_content: list[str] = []
+        self.sub_paragraphs: list[DocParagraph] = []
 
         self.text_embedding: TextEmbedding = text_embedding
         self.openai_adapter: OpenaiAdapter = openai_adapter
@@ -64,6 +64,7 @@ class DocParagraph():
     #     return chunk_list
 
     def execute_split_content(self, input_content: str, depth_cnt: int=0) -> list:
+        depth_cnt += 1
         chunk_list = []
         if len(input_content) < self.max_chunk_size or depth_cnt > 10:
             # if len(input_content) < self.max_chunk_size or similarity_threshold >= 0.9:
@@ -85,11 +86,11 @@ class DocParagraph():
     def try_split_content(self) -> int:
         import re
         self.content = re.sub(r'\n+', '\n', self.content)
-        self.splitted_content = self.execute_split_content(self.content, 0.1)
+        self.splitted_content = self.execute_split_content(self.content, 0)
 
         return 0
 
-def trans_doc_paragraph_list_to_content_list(doc_paragraph_list: List[DocParagraph]) -> List[str]:
+def trans_doc_paragraph_list_to_content_list(doc_paragraph_list: list[DocParagraph]) -> list[str]:
     content_list = []
     for doc_paragraph in doc_paragraph_list:
         if len(doc_paragraph.splitted_content) > 0:
