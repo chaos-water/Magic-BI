@@ -1,61 +1,77 @@
 # Introduction
-<a href="https://github.com/chaos-water/Magic-BI/blob/main/README_zh.md" style="color: blue; font-size: 18px;">中文README</a><br/>
-Magic-BI is an AI-based fully automated Data Agent product that supports SQL/NoSQL databases, text, images, and business systems. Magic-BI is open-source and can be deployed in a fully private or semi-private environment, which maximizes 
-user privacy protection while lowering the usage threshold for users.
-Currently supported data types include: SQL databases, text, images, and business systems.
+<a href="https://github.com/chaos-water/Magic-BI/blob/main/README_zh.md" style="color: blue; font-size: 18px;">中文请点这里</a><br/>
+# Introduction
+Magic-BI is an AI-based fully automated ChatBI product that currently supports SQL databases. Magic-BI is open-source and can be deployed in a fully private or semi-private manner, which maximizes user privacy protection while lowering 
+the usage threshold.
 
 # Competitor Comparison
-|           |                                Magic-BI                                 |                                                                                             Other Chat BI Products |
-| :---        |    :---   |          :--- |
-| Ease of Use  | In Explorer mode, Magic-BI autonomously learns the database structure, and after learning is complete, it can be used immediately. | Requires one or more of the following operations:<br/>1. Data governance by 
-professionals;<br/>2. Business colleagues and technical personnel write questions and corresponding SQL queries for the database. |
-| Question Scope Limitation | After autonomously learning the database structure, Magic-BI does not limit the scope of user questions; simultaneously, Magic-BI supports users writing questions and corresponding SQL queries, providing 
-more accurate answers to such questions. | Existing Chat BI products typically restrict questions within the scope supported by data governance or similar to pre-written questions. |
-| Supported Data Types  | Magic-BI supports SQL databases, NoSQL databases, text, images, and business systems. Users can interact with a single type of data individually or simultaneously with multiple types or all categories of data. | 
-Most existing Chat BI products only support SQL and NoSQL databases. To support documents, an additional RAG (Retrieval-Augmented Generation) knowledge base system needs to be deployed. This increases costs and complexity, leading to 
-fragmented systems where users cannot gain insights from all their data simultaneously. |
+|          | Magic-BI                                                                                                     |         Other Chat BI Products                                                                           |
+|:---------|:-------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------|
+| Data Security     | Magic-BI can operate entirely using a closed-source model, preventing internal data or metadata leakage.                                                                           | Some competitors use closed-source 
+large models, which can lead to data and metadata leakage from business databases, introducing commercial risks.                                                |
+| Build Cost     | Magic-BI can fine-tune the model with zero or minimal user input training data, significantly reducing usage costs.                                                            | Users or vendors need to build training 
+data (such as question-SQL pairs) based on the business domain and database structure, typically in the hundreds or thousands, requiring substantial human and time resources.                          |
+| Ease of Use      | Magic-BI provides complete functionality for training data generation, model fine-tuning, and deployment, allowing users to perform these tasks with simple page operations, significantly lowering the product usage 
+threshold.                           | Professional technical personnel are required to build training data, select base models, fine-tune models, and deploy them, which is time-consuming, costly, and uncertain.                           
+           |
+| Data Governance Required | Magic-BI works directly on business databases without requiring data governance or data warehouse construction, offering the following advantages:<br/>1. No restrictions on question types;<br/>2. Avoids the 
+need for data warehouse construction;<br/>3. Suitable for production deployment. | Some competitors use closed-source large models to improve accuracy. However, in real business systems, the accuracy of general-purpose large models is 
+often insufficient for production use.                             |
 
-## SQL Databases
-For SQL type data, Magic-BI supports three modes: Beginner Mode, Expert Mode, and Explorer Mode.
-### Agent Mode
-Beginner Mode is implemented using a general large model + RAG (Retrieval-Augmented Generation) + agent approach. The advantage is low usage threshold, but the disadvantage is lower accuracy and higher inference cost, whether using local 
-large models or cloud services for large models. In Beginner Mode, it is recommended to use an open-source large model of 70B+ parameters or other large model cloud services.
-### Fine-Tuned Model Mode
-Expert Mode is implemented using a fine-tuned large model + agent approach. The advantage is higher accuracy and lower inference cost, but the disadvantage is the need for initial training data. For SQL databases, Expert Mode generally 
-outperforms Beginner Mode. In Expert Mode, it is recommended to use an open-source large model of 70B+ parameters or other large model cloud services.
-### Explorer Mode
-Explorer Mode is implemented using a general large model + RAG (Retrieval-Augmented Generation) + agent approach. This mode is designed for exploratory data analysis and can provide more flexible query capabilities.
+# Operating Modes
+Magic-BI currently supports two operating modes: Fine-Tuned Model Mode and Agent Mode.
+## Agent Mode
+This mode is implemented using a general-purpose large model + RAG (Retrieval-Augmented Generation) + agent approach. The advantage is low usage threshold, but the disadvantage is lower accuracy and higher inference cost. For beginners, 
+it is recommended to use open-source large models of 70B+ or other large model cloud services.
+## Fine-Tuned Model Mode
+This mode is implemented using a fine-tuned large model + agent approach. The advantage is high accuracy and low inference cost, but the disadvantage is that it requires generating training data and fine-tuning the model, which slightly 
+increases the usage threshold.
 
-## Text, Images, and Business Systems
-For text, images, and business systems, Magic-BI currently uses general large models to provide services. The base_url, model, and api_key are configured in `config/magic_bi.yml`.
+# Runtime Environment
+Magic-BI can run on Ubuntu 22.04, RTX 4090, CUDA 12+, and PyTorch 2.0+. Other environments have not been rigorously tested, but similar environments should also work.
+If you encounter any issues while using Magic-BI, you can contact us through the following contact information.
 
-# Auxiliary Data
-Auxiliary data is primarily used to enhance the effectiveness of Magic-BI's responses to user queries. It can be divided into RAG (Retrieval-Augmented Generation) and fine-tuning forms.
-## RAG Data
-RAG data is added by users to assist in enhancing Magic-BI's response effectiveness. The specific addition methods are detailed in `xxx`.
-## Fine-Tuning Data
-Fine-tuning data is used to fine-tune language models, thereby improving Magic-BI's response effectiveness. The generation of fine-tuning data and the methods for model fine-tuning are detailed in `xxx`.
+# Installation
+Magic-BI supports three installation methods: pip installation, Docker deployment, and source code compilation. We recommend using the Docker deployment method.
+## Pip Installation
+Install the PostgreSQL development library:
+### Ubuntu/Debian
+```
+sudo apt-get update
+sudo apt-get install libpq-dev
+```
+### CentOS/Fedora/RHEL
+```
+sudo yum install postgresql-devel
+```
+### macOS
+```
+brew install postgresql
+```
+Execute the following command to complete the installation of Magic-BI:
+```
+pip install magic-bi
+```
+## Docker Deployment
+To deploy using Docker, you need to install Docker on your system and enable GPU support for Docker. The specific operations are not covered here.
+Execute the following two commands to start Magic-BI and its related dependencies:
+1. `cd $Magic-BI;`
+2. `docker compose -f deployment/docker-compose.yml up -d.`
+
+## Source Code Compilation
+### Magic-BI
+Enter the Magic-BI directory and execute the command `pip3 install -e .`
+
+### Dependencies
+Execute the following two commands to start the dependencies for Magic-BI:
+1. `cd $Magic-BI;`
+2. `docker compose -f deployment/docker-compose.yml up -d.`
+3. `docker compose -f deployment/docker-compose-component.yml up -d.`
 
 # Client
-Magic-BI supports two types of clients: WEB GUI and Restful API. If you want to use Magic-BI directly, access it through the web page; if you want to integrate Magic-BI into your system or use only part of its functionality, access it 
-via Restful API.
+Magic-BI supports two types of clients: WEB GUI and Restful API. If you want to use Magic-BI directly, access it through the web interface. If you want to integrate Magic-BI into your system or use specific functionalities, access it via 
+the Restful API.
 ## WEB GUI
-Run the command `python3 -m magic_bi.main --config config/magic_bi.yml` to start the system. Enter `http://$url:6688` in a browser to access the system. Currently supported web browsers are mainly Chrome and Firefox.
+Execute the command `python3 -m magic_bi.main --config config/system.yml` to start the system. Enter `http://127.0.0.1:6688` in a web browser (currently supported browsers are Chrome and Firefox) to access the system.
 ## Restful API
-Run the command `python3 -m magic_bi.main --config config/magic_bi.yml` to start the system. Use an API tool or other systems to call Magic-BI. See `xxx` for API documentation.
-
-# Models
-## Large Models
-Currently, large models (language and multimodal) are mainly adopted through OpenAI API compatibility, supporting both general models and fine-tuned models. Text, images, and business systems still use general large models; for SQL 
-databases, the performance of fine-tuned models is better than that of general models.
-### General Large Models
-Text, images, and business systems currently still use general large models. For SQL databases, when using general large models, Magic-BI primarily provides Chat-BI services in a RAG (Retrieval-Augmented Generation) manner.
-#### Local Large Models
-Local large models can be deployed using ollama or vllm and provide services in an OpenAI API-compatible way.
-#### Large Model Services
-Almost all large model services are provided through the OpenAI API.
-### Fine-Tuned Large Models
-Fine-tuned large models are currently mainly used for SQL databases. The fine-tuning methods for the models are detailed in `xxx`.
-
-# Configuration
-The corresponding base_url, model, and api_key are configured in `config/magic_bi.yml`.
+Execute the command `python3 -m magic_bi.main --config config/system.yml` to start the system. Use an API tool or another system to call Magic-BI.
